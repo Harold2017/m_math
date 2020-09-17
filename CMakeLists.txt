@@ -22,6 +22,7 @@ add_executable(m_interp examples/interp.cpp)
 add_executable(m_fft examples/fft.cpp)
 add_executable(m_curvefit examples/curvefit.cpp)
 add_executable(m_geo examples/geo.cpp)
+add_executable(m_peaks examples/peaks.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
