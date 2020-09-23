@@ -17,7 +17,7 @@ int main()
             { 39, 39, 40, 42, 47, 49, 27, 30 },
             { 31, 31, 31, 32, 32, 33, 44, 35 }
     };
-    auto pv = find_peaks_and_valleys(a, 6, 8, [](int x){ return x; });
+    auto pv = Peak2D::find_peaks_and_valleys(a, 6, 8, [](int x){ return x; });
 
     for (auto peak : pv.first)
         std::cout << "peak: " << a[peak.first][peak.second] << " at " << peak.first << ',' << peak.second << '\n';
@@ -35,7 +35,7 @@ int main()
             { 31, 31, 31, 32, 32, 33, 44, 35 }
     };
 
-    auto pv_b = find_peaks_and_valleys(b, 6, 8, [](float x){ return x; });
+    auto pv_b = Peak2D::find_peaks_and_valleys(b, 6, 8, [](float x){ return x; });
 
     for (auto peak : pv_b.first)
         std::cout << "peak: " << a[peak.first][peak.second] << " at " << peak.first << ',' << peak.second << '\n';
