@@ -26,6 +26,7 @@ add_executable(m_peaks examples/peaks.cpp)
 add_executable(m_curvature examples/curvature.cpp)
 add_executable(m_filter examples/filter.cpp)
 add_executable(m_peak examples/peak.cpp)
+add_executable(m_p1d examples/p1d.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
