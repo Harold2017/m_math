@@ -32,25 +32,24 @@ namespace M_MATH {
 
         // histogram of points height
         // need sort points first
+        // hist size is N - 1, not N: N points with N - 1 bins
         template<typename IT, typename T, size_t N = 20>
         std::vector<unsigned> HistOfHeight(IT const begin, IT const end, T max, T min) {
-            static_assert(N > 2, "Hist: at least 3 sets: [max + 0.5 * deltaZ), "
-                                 "(min + 0.5 * deltaZ : deltaZ : max - 0.5 * deltaZ), "
-                                 "[max - 0.5 * deltaZ, max]");
-            double deltaZ = (max - min) / (N-2);
-            std::vector<unsigned> hist(N, 0);
+            static_assert(N > 1, "Hist: at least 1 sets: [min, max]");
+            double deltaZ = (max - min) / (N - 1);
+            std::vector<unsigned> hist(N - 1, 0);
             size_t cnt = 1;
             for (auto it = begin; it != end; ++it)
-                // [min, min + 0.5 * deltaZ) -> hist[0]
-                if ((*it).z < min + 0.5 * deltaZ)
+                // [min, min + deltaZ) -> hist[0]
+                if ((*it).z < min + deltaZ)
                     ++hist[0];
-                    // [max - 0.5 * deltaZ, max] -> hist[N-1]
-                else if ((*it).z >= max - 0.5 * deltaZ) {
-                    ++hist[N-1];
+                    // [max - deltaZ, max] -> hist[N-1]
+                else if ((*it).z >= max - deltaZ) {
+                    ++hist[N-2];
                 }
-                    // [min + 0.5 * deltaZ : deltaZ : max - 0.5 * deltaZ)
+                    // [min + deltaZ : deltaZ : max - deltaZ)
                 else {
-                    if ((*it).z >= min + (cnt - 0.5) * deltaZ && (*it).z < min + (cnt + 0.5) * deltaZ)
+                    if (((*it).z >= min + cnt * deltaZ) && ((*it).z < min + double(cnt + 1) * deltaZ))
                         ++hist[cnt];
                     else {
                         ++cnt;
@@ -63,8 +62,9 @@ namespace M_MATH {
         // height ratio (distribution), certain point height in whole points set
         template<typename IT, typename T, size_t N = 20>
         double HeightRatio(IT const begin, IT const end, T max, T min, double z) {
-            static auto hist = HistOfHeight(begin, end, max, min);
-            double deltaZ = (max - min) / (N-2);
+            // hist size is N - 1, not N: N points with N - 1 bins
+            static auto hist = HistOfHeight<N>(begin, end, max, min);
+            double deltaZ = (max - min) / (N - 1);
             if (z == min)
                 return 1.0;
             else if (z == max)
@@ -79,7 +79,7 @@ namespace M_MATH {
                     sum = std::accumulate(hist.begin(), hist.begin() + quotient + 1, 0u);
                 else
                     sum = std::accumulate(hist.begin(), hist.begin() + quotient + 2, 0u);
-                return 1.0 - double(sum) / 100.0;
+                return 1.0 - double(sum) / double(std::distance(begin, end));
             }
         }
 

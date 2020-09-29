@@ -14,7 +14,7 @@
 using namespace M_MATH::GEO;
 
 template<typename T>
-void print_v(std::string name, std::vector<T> const& v) {
+void print_v(std::string const& name, std::vector<T> const& v) {
     std::cout << name << ": ";
     for (auto const& e : v)
         std::cout << e << " ";
