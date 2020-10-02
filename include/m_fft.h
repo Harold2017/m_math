@@ -35,20 +35,20 @@ namespace M_MATH {
     public:
         // double[Nx * Ny]
         // Nx * Ny -> Nx * (Ny / 2 + 1) complex
-        static bool rfft(double* pOrigin, double* pReal, double* pImg, int length_x, int length_y);
-        static bool rfft(double* pOrigin, std::complex<double>* pComplex, int length_x, int length_y);
+        static bool rfft(double* pOrigin, double* pReal, double* pImg, int xdim, int ydim);
+        static bool rfft(double* pOrigin, std::complex<double>* pComplex, int xdim, int ydim);
         // double[Nx * Ny]
-        static bool irfft(double *pOrigin, double const* pReal, double const* pImg, int length_x, int length_y);
-        static bool irfft(double *pOrigin, std::complex<double>* pComplex, int length_x, int length_y);
+        static bool irfft(double *pOrigin, double const* pReal, double const* pImg, int xdim, int ydim);
+        static bool irfft(double *pOrigin, std::complex<double>* pComplex, int xdim, int ydim);
     };
 
-    bool FFT2D::rfft(double *pOrigin, double *pReal, double *pImg, int length_x, int length_y) {
-        auto fft_size = length_x * (length_y/2+1);
+    bool FFT2D::rfft(double *pOrigin, double *pReal, double *pImg, int xdim, int ydim) {
+        auto fft_size = xdim * (ydim/2+1);
         auto pOut = fftw_alloc_complex(fft_size);
         if (pOut == nullptr) {
             return false;
         }
-        auto f_plan = fftw_plan_dft_r2c_2d(length_x, length_y, pOrigin, pOut, FFTW_ESTIMATE);
+        auto f_plan = fftw_plan_dft_r2c_2d(xdim, ydim, pOrigin, pOut, FFTW_ESTIMATE);
         if (f_plan == nullptr) {
             fftw_free(pOut);
             return false;
@@ -63,18 +63,18 @@ namespace M_MATH {
         return true;
     }
 
-    bool FFT2D::irfft(double *pOrigin, const double *pReal, const double *pImg, int length_x, int length_y) {
-        auto fft_size = length_x * (length_y/2+1);
+    bool FFT2D::irfft(double *pOrigin, const double *pReal, const double *pImg, int xdim, int ydim) {
+        auto fft_size = xdim * (ydim/2+1);
         auto pIn = fftw_alloc_complex(fft_size);
         if (pIn == nullptr) {
             return false;
         }
-        auto N = length_x * length_y;
+        auto N = xdim * ydim;
         for (auto i = 0; i < fft_size; ++i) {
             pIn[i][0] = pReal[i] / N;
             pIn[i][1] = pImg[i] / N;
         }
-        auto f_plan = fftw_plan_dft_c2r_2d(length_x, length_y, pIn, pOrigin, FFTW_ESTIMATE);
+        auto f_plan = fftw_plan_dft_c2r_2d(xdim, ydim, pIn, pOrigin, FFTW_ESTIMATE);
         if (f_plan == nullptr) {
             fftw_free(pIn);
             return false;
@@ -85,13 +85,13 @@ namespace M_MATH {
         return true;
     }
 
-    bool FFT2D::rfft(double *pOrigin, std::complex<double> *pComplex, int length_x, int length_y) {
-        auto fft_size = length_x * (length_y/2+1);
+    bool FFT2D::rfft(double *pOrigin, std::complex<double> *pComplex, int xdim, int ydim) {
+        auto fft_size = xdim * (ydim/2+1);
         auto pOut = fftw_alloc_complex(fft_size);
         if (pOut == nullptr) {
             return false;
         }
-        auto f_plan = fftw_plan_dft_r2c_2d(length_x, length_y, pOrigin, pOut, FFTW_ESTIMATE);
+        auto f_plan = fftw_plan_dft_r2c_2d(xdim, ydim, pOrigin, pOut, FFTW_ESTIMATE);
         if (f_plan == nullptr) {
             fftw_free(pOut);
             return false;
@@ -103,18 +103,18 @@ namespace M_MATH {
         return true;
     }
 
-    bool FFT2D::irfft(double *pOrigin, std::complex<double> *pComplex, int length_x, int length_y) {
-        auto fft_size = length_x * (length_y/2+1);
+    bool FFT2D::irfft(double *pOrigin, std::complex<double> *pComplex, int xdim, int ydim) {
+        auto fft_size = xdim * (ydim/2+1);
         auto pIn = fftw_alloc_complex(fft_size);
         if (pIn == nullptr) {
             return false;
         }
-        auto N = length_x * length_y;
+        auto N = xdim * ydim;
         for (auto i = 0; i < fft_size; ++i) {
             pIn[i][0] = std::real(pComplex[i]) / N;
             pIn[i][1] = std::imag(pComplex[i]) / N;
         }
-        auto f_plan = fftw_plan_dft_c2r_2d(length_x, length_y, pIn, pOrigin, FFTW_ESTIMATE);
+        auto f_plan = fftw_plan_dft_c2r_2d(xdim, ydim, pIn, pOrigin, FFTW_ESTIMATE);
         if (f_plan == nullptr) {
             fftw_free(pIn);
             return false;
