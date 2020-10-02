@@ -69,13 +69,19 @@ int main() {
     double ori2[9];
     double re[6];
     double im[6];
+    std::complex<double> cpx[6];
 
     FFT2D::rfft(ori, re, im, 3, 3);
+    FFT2D::rfft(ori, cpx, 3, 3);
     for (auto i = 0; i < 6; ++i)
-        std::cout << "( " << re[i] << ", " << im[i] << " )" << ' ';
+        std::cout << "( " << re[i] << ", " << im[i] << ", " << cpx[i] << " )" << ' ';
     std::cout << std::endl;
 
     FFT2D::irfft(ori2, re, im, 3, 3);
+    for (double i : ori2)
+        std::cout << i << ' ';
+    std::cout << std::endl;
+    FFT2D::irfft(ori2, cpx, 3, 3);
     for (double i : ori2)
         std::cout << i << ' ';
     std::cout << std::endl;
