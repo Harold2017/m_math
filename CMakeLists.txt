@@ -34,6 +34,7 @@ add_executable(m_hist examples/hist.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
+target_link_libraries(m_fft_shift ${FFTW_LIBRARIES})
 target_link_libraries(m_curvefit GSL::gsl GSL::gslcblas)
 target_link_libraries(m_geo CGAL::CGAL GSL::gsl GSL::gslcblas)
 target_link_libraries(m_curvature GSL::gsl GSL::gslcblas)
