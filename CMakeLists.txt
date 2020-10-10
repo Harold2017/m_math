@@ -12,6 +12,9 @@ include_directories(${FFTW_INCLUDE_DIRS})
 find_package(CGAL REQUIRED)
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 include_directories(
         include
         utils)
@@ -31,6 +34,7 @@ add_executable(m_integration examples/integration.cpp)
 add_executable(m_fft_shift examples/fft_shift.cpp)
 add_executable(m_autoc examples/autoc.cpp)
 add_executable(m_hist examples/hist.cpp)
+add_executable(m_fft_opencv examples/fft_opencv.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
@@ -42,3 +46,4 @@ target_link_libraries(m_filter GSL::gsl GSL::gslcblas)
 target_link_libraries(m_integration GSL::gsl GSL::gslcblas)
 target_link_libraries(m_autoc ${FFTW_LIBRARIES})
 target_link_libraries(m_hist GSL::gsl GSL::gslcblas)
+target_link_libraries(m_fft_opencv ${OpenCV_LIBS})
