@@ -9,25 +9,16 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
+
 using namespace cv;
 using namespace std;
-static void help(char ** argv)
-{
-    cout << endl
-         <<  "This program demonstrated the use of the discrete Fourier transform (DFT). " << endl
-         <<  "The dft of an image is taken and it's power spectrum is displayed."  << endl << endl
-         <<  "Usage:"                                                                      << endl
-         << argv[0] << " [image_name -- default lena.jpg]" << endl << endl;
+
+template<typename T>
+Mat ToMat(size_t xdim, size_t ydim, T* data) {
+    return Mat(xdim, ydim, CV_32FC1, data);
 }
-int main(int argc, char ** argv)
-{
-    help(argv);
-    const char* filename = argc >=2 ? argv[1] : "lena.jpg";
-    Mat I = imread( samples::findFile( filename ), IMREAD_GRAYSCALE);
-    if( I.empty()){
-        cout << "Error opening image" << endl;
-        return EXIT_FAILURE;
-    }
+
+Mat GetMag(Mat const& I) {
     Mat padded;                            //expand input image to optimal size
     int m = getOptimalDFTSize( I.rows );
     int n = getOptimalDFTSize( I.cols ); // on the border add zero values
@@ -60,9 +51,53 @@ int main(int argc, char ** argv)
     q2.copyTo(q1);
     tmp.copyTo(q2);
     normalize(magI, magI, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
+
     // viewable image form (float between values 0 and 1).
     imshow("Input Image"       , I   );    // Show the result
     imshow("spectrum magnitude", magI);
     waitKey();
-    return EXIT_SUCCESS;
+    return magI;
+}
+
+int main()
+{
+    //*
+    Mat I = imread( samples::findFile( "lena.jpg" ), IMREAD_GRAYSCALE);
+    if( I.empty()){
+        cout << "Error opening image" << endl;
+        return EXIT_FAILURE;
+    }
+    //GetMag(I);
+     //*/
+
+    // 2d matrix as pts
+    size_t M = 10, N = 10;
+    std::vector<std::vector<double>> pts(N, std::vector<double>(M, 0));
+    //for (auto i = 0; i < M; ++i) {pts[1][i] = 1; pts[3][i] = 1; pts[5][i] = 1; pts[7][i] = 1; pts[9][i] = 1;}
+    //for (auto i = 0; i < M; ++i) {pts[i][1] = 1; pts[i][3] = 1; pts[i][5] = 1; pts[i][7] = 1; pts[i][9] = 1;}
+    for (auto i = 0; i < M; ++i) pts[i][i] = 1;
+    //for (auto i = 0; i < M; ++i)
+    //    for (auto j = 0; j < N; ++j)
+    //        pts[i][j] = 1;
+    //for (auto i = 0; i < M; ++i)
+    //    for (auto j = 0; j < N; ++j)
+    //        pts[i][j] = normal_gen<double>();
+
+    std::vector<double> pts1(M*N);
+    for (auto i = 0; i < M; ++i)
+        for (auto j = 0; j < N; ++j)
+            pts1[j * M + i] = pts[i][j];
+
+    //Mat I = ToMat(M, N, pts1.data());
+    //GetMag(I);
+
+    Mat mag, phase;
+    M_MATH::Spectrum_MagInLog_Phase(I, mag, phase);
+
+    imshow("Input Image", I);
+    imshow("spectrum magnitude", mag);
+    imshow("phase", phase);
+    waitKey();
+
+    return 0;
 }
