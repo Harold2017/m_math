@@ -287,6 +287,17 @@ namespace M_MATH {
             for (; j != (in_end-n); ++j, ++k)
                 *k = *(j+1) - *j;
     }
+
+    // find all maximums
+    template<typename IT, typename CMP>
+    std::vector<size_t> find_maximums(IT begin, IT end, CMP cmp) {
+        std::vector<size_t> indexes;
+        auto it_max = std::max_element(begin, end, cmp);
+        // abs equal
+        for (; it_max != end; it_max = std::find(std::next(it_max), end, std::abs(*it_max)))
+            indexes.push_back(std::distance(begin, it_max));
+        return indexes;
+    }
 }
 
 #endif //M_MATH_M_MATH_H
