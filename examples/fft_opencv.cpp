@@ -9,26 +9,32 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-
-using namespace cv;
-using namespace std;
+#include <vector>
+#include <utility>
 
 template<typename T>
-Mat ToMat(size_t xdim, size_t ydim, T* data) {
-    return Mat(xdim, ydim, CV_32FC1, data);
+cv::Mat ToMat(size_t xdim, size_t ydim, T* data) {
+    return cv::Mat(xdim, ydim, CV_32FC1, data);
+}
+
+template<typename T>
+void print_v(std::vector<T> const& v) {
+    for (auto const& e : v)
+        std::cout << e << ' ';
+    std::cout << std::endl;
 }
 
 int main()
 {
-    //*
-    Mat I = imread( samples::findFile( "lena.jpg" ), IMREAD_GRAYSCALE);
+    /*
+    cv::Mat I = imread( cv::samples::findFile( "lena.jpg" ), cv::IMREAD_GRAYSCALE);
     if( I.empty()){
-        cout << "Error opening image" << endl;
+        std::cout << "Error opening image" << std::endl;
         return EXIT_FAILURE;
     }
-    // */
+    */
 
-    /*
+
     // 2d matrix as pts
     size_t M_ = 10, N_ = 10;
     std::vector<std::vector<double>> pts(N_, std::vector<double>(M_, 0));
@@ -47,14 +53,19 @@ int main()
         for (auto j = 0; j < N_; ++j)
             pts1[j * M_ + i] = pts[i][j];
 
-    Mat I = ToMat(M_, N_, pts1.data());
-     */
+    cv::Mat I = ToMat(M_, N_, pts1.data());
 
-    Mat mag, phase;
+
+    cv::Mat mag, phase;
     //M_MATH::Spectrum_Mag_Phase(I, mag, phase);
     //M_MATH::Spectrum_MagInLog_Phase(I, mag, phase);
     //M_MATH::Spectrum_Mag(I, mag);
     M_MATH::Spectrum_MagInLog(I, mag);
+
+    //cv::imshow("Input Image", I);
+    //cv::imshow("spectrum magnitude", h_mag);
+    //cv::imshow("phase", phase);
+    //cv::waitKey();
 
     auto m = mag.rows;
     auto n = mag.cols;
@@ -62,12 +73,40 @@ int main()
     auto N = m < n ? m : n;
     std::cout << N << std::endl;
 
+    // only need the upper half
+    // shallow copy, for deep copy, use `.copyTo()` or `.clone()`
+    auto roi = cv::Rect(0, 0, m, n/2 + 1);
+    auto h_mag = mag(roi);
 
+    std::vector<float> Psum(181);
+    // theta: [0:1:180]
+    double theta;
+    cv::Mat mask = cv::Mat::zeros(h_mag.rows, h_mag.cols, CV_32F);
+    auto center = cv::Point(m/2, n/2);
 
-    imshow("Input Image", I);
-    imshow("spectrum magnitude", mag);
-    //imshow("phase", phase);
-    waitKey();
+    for (auto i = 0; i < 181; i++) {
+        // theta in radians
+        theta = double(i) / 180.0 * M_PI;
+        // draw mask
+        mask.setTo(cv::Scalar(0));
+        cv::line(mask, center,
+             cv::Point2f(float(m)/2 + float(N)/2 * std::cos(theta), float(n)/2-float(N)/2 * std::sin(theta)),
+             cv::Scalar_<double>(1));
+        //cv::imshow("mask", mask);
+        //cv::waitKey();
+
+        // apply mask
+        cv::bitwise_and(h_mag, mask, mask);
+        //cv::imshow("out", mask);
+        //cv::waitKey();
+        //std::cout << cv::sum(mask)[0] << std::endl;
+        Psum[i] = cv::sum(mask)[0];
+    }
+
+    print_v(Psum);
+
+    auto max_it = std::max_element(Psum.begin(), Psum.end());
+    std::cout << std::distance(Psum.begin(), max_it) << std::endl;
 
     return 0;
 }
