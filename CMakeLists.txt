@@ -55,3 +55,7 @@ target_link_libraries(m_p2d_opencv ${OpenCV_LIBS})
 target_link_libraries(m_area_opencv ${OpenCV_LIBS})
 target_link_libraries(m_distance_CGAL CGAL::CGAL)
 target_link_libraries(m_filters_opencv ${OpenCV_LIBS})
+
+# drafts
+add_executable(d_fitler drafts/filter.cpp)
+target_link_libraries(d_fitler ${OpenCV_LIBS})
