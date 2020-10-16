@@ -62,6 +62,8 @@ target_link_libraries(m_curvefit_opencv ${OpenCV_LIBS})
 # drafts
 add_executable(d_fitler drafts/filter.cpp)
 add_executable(d_curvefit drafts/curvefit.cpp)
+add_executable(d_curvature drafts/curvature.cpp)
 
 target_link_libraries(d_fitler ${OpenCV_LIBS})
 target_link_libraries(d_curvefit ${OpenCV_LIBS})
+target_link_libraries(d_curvature ${OpenCV_LIBS})
