@@ -40,6 +40,7 @@ add_executable(m_area_opencv examples/area_opencv.cpp)
 add_executable(m_distance_CGAL examples/distance.cpp)
 add_executable(m_filters_opencv examples/filters_opencv.cpp)
 add_executable(m_curvefit_opencv examples/curvefit_opencv.cpp)
+add_executable(m_integration_hm examples/integration_hm.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
