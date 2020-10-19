@@ -41,6 +41,7 @@ add_executable(m_distance_CGAL examples/distance.cpp)
 add_executable(m_filters_opencv examples/filters_opencv.cpp)
 add_executable(m_curvefit_opencv examples/curvefit_opencv.cpp)
 add_executable(m_integration_hm examples/integration_hm.cpp)
+add_executable(m_correlation examples/correlation.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
@@ -58,6 +59,7 @@ target_link_libraries(m_area_opencv ${OpenCV_LIBS})
 target_link_libraries(m_distance_CGAL CGAL::CGAL)
 target_link_libraries(m_filters_opencv ${OpenCV_LIBS})
 target_link_libraries(m_curvefit_opencv ${OpenCV_LIBS})
+target_link_libraries(m_correlation ${OpenCV_LIBS})
 
 # drafts
 add_executable(d_fitler drafts/filter.cpp)
