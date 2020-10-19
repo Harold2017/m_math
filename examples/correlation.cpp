@@ -21,7 +21,8 @@ int main() {
     M_MATH::translateImg(I1, 30, 20);
     cv::imshow("transferred", I1);
 
-    auto corr = M_MATH::Correlation(I, I1);
+    auto corr = M_MATH::XCorrelation(I, I1);
+    cv::normalize(corr, corr, 1, 0, cv::NORM_MINMAX);
     cv::imshow("corr", corr);
     cv::waitKey();
 

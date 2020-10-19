@@ -10,7 +10,8 @@
 #include "m_fft_opencv.h"
 
 namespace M_MATH {
-    cv::Mat Correlation(cv::Mat const& I, cv::Mat const& I1) {
+    // cross correlation
+    cv::Mat XCorrelation(cv::Mat const& I, cv::Mat const& I1) {
         int width = cv::getOptimalDFTSize(std::max(I.cols,I1.cols));
         int height = cv::getOptimalDFTSize(std::max(I.rows,I1.rows));
         cv::Mat fft1;
@@ -26,11 +27,9 @@ namespace M_MATH {
         cv::dft(fft2,fft2,0,I1.rows);
 
         cv::mulSpectrums(fft1,fft2,fft1,0,true);
-        fft1 = fft1/cv::abs(fft1);
-        cv::idft(fft1,fft1);
-        //cv::idft(fft1,fft1,cv::DFT_SCALE|cv::DFT_REAL_OUTPUT);
+        cv::idft(fft1,fft1,cv::DFT_SCALE|cv::DFT_REAL_OUTPUT);
         Rearrange(fft1, fft1);
-        return fft1;
+        return cv::abs(fft1)/(width*height);
     }
 
     cv::Mat translateImg(cv::Mat &img, int offsetx, int offsety) {
