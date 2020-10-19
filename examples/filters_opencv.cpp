@@ -7,26 +7,9 @@
 #include <vector>
 #include <opencv2/highgui.hpp>
 #include "m_filters_opencv.h"
+#include "m_opencv_utils.h"
 
 using namespace M_MATH;
-
-// all use float inside
-template<typename T>
-inline cv::Mat ToMat(size_t rows, size_t cols, T *data) {
-    return cv::Mat(rows, cols, CV_32FC1, data);
-}
-
-template<typename T>
-void ToVec(cv::Mat const& in, std::vector<T> & out) {
-    if (in.isContinuous()) {
-        // array.assign((float*)mat.datastart, (float*)mat.dataend); // <- has problems for sub-matrix like mat = big_mat.row(i)
-        out.assign((float*)in.data, (float*)in.data + in.total()*in.channels());
-    } else {
-        for (int i = 0; i < in.rows; ++i) {
-            out.insert(out.end(), in.ptr<float>(i), in.ptr<float>(i)+in.cols*in.channels());
-        }
-    }
-}
 
 int main() {
     std::random_device dev;
@@ -40,8 +23,8 @@ int main() {
     size_t const N = 100;
     size_t const window_size = 11;
     size_t const res_size = N;
-    std::vector<double> x;
-    std::vector<double> n_x;
+    std::vector<float> x;
+    std::vector<float> n_x;
     x.reserve(N);
     n_x.resize(res_size);
     for (auto i = 0; i < N; ++i)

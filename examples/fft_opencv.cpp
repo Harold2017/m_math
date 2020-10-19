@@ -11,11 +11,7 @@
 #include <iostream>
 #include <vector>
 #include <utility>
-
-template<typename T>
-cv::Mat ToMat(size_t xdim, size_t ydim, T* data) {
-    return cv::Mat(xdim, ydim, CV_32FC1, data);
-}
+#include "m_opencv_utils.h"
 
 template<typename T>
 void print_v(std::vector<T> const& v) {
@@ -37,7 +33,7 @@ int main()
 
     // 2d matrix as pts
     size_t M_ = 10, N_ = 10;
-    std::vector<std::vector<double>> pts(N_, std::vector<double>(M_, 0));
+    std::vector<std::vector<float>> pts(N_, std::vector<float>(M_, 0));
     //for (auto i = 0; i < M; ++i) {pts[1][i] = 1; pts[3][i] = 1; pts[5][i] = 1; pts[7][i] = 1; pts[9][i] = 1;}
     //for (auto i = 0; i < M; ++i) {pts[i][1] = 1; pts[i][3] = 1; pts[i][5] = 1; pts[i][7] = 1; pts[i][9] = 1;}
     for (auto i = 0; i < M_; ++i) pts[i][i] = 1;
@@ -46,9 +42,9 @@ int main()
     //        pts[i][j] = 1;
     //for (auto i = 0; i < M; ++i)
     //    for (auto j = 0; j < N; ++j)
-    //        pts[i][j] = normal_gen<double>();
+    //        pts[i][j] = normal_gen<float>();
 
-    std::vector<double> pts1(M_*N_);
+    std::vector<float> pts1(M_*N_);
     for (auto i = 0; i < M_; ++i)
         for (auto j = 0; j < N_; ++j)
             pts1[j * M_ + i] = pts[i][j];
@@ -91,7 +87,7 @@ int main()
         mask.setTo(cv::Scalar(0));
         cv::line(mask, center,
              cv::Point2f(float(m)/2 + float(N)/2 * std::cos(theta), float(n)/2-float(N)/2 * std::sin(theta)),
-             cv::Scalar_<double>(1));
+             cv::Scalar_<float>(1));
         //cv::imshow("mask", mask);
         //cv::waitKey();
 
