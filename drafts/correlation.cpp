@@ -16,6 +16,36 @@ cv::Mat translateImg(cv::Mat &img, int offsetx, int offsety){
     return img;
 }
 
+enum Direction{
+    ShiftUp=1, ShiftRight, ShiftDown, ShiftLeft
+};
+
+cv::Mat shiftFrame(cv::Mat const& frame, int pixels, Direction direction)
+{
+    //create a same sized temporary Mat with all the pixels flagged as invalid (-1)
+    cv::Mat temp = cv::Mat::zeros(frame.size(), frame.type());
+
+    switch (direction)
+    {
+        case(ShiftUp) :
+            frame(cv::Rect(0, pixels, frame.cols, frame.rows - pixels)).copyTo(temp(cv::Rect(0, 0, temp.cols, temp.rows - pixels)));
+            break;
+        case(ShiftRight) :
+            frame(cv::Rect(0, 0, frame.cols - pixels, frame.rows)).copyTo(temp(cv::Rect(pixels, 0, frame.cols - pixels, frame.rows)));
+            break;
+        case(ShiftDown) :
+            frame(cv::Rect(0, 0, frame.cols, frame.rows - pixels)).copyTo(temp(cv::Rect(0, pixels, frame.cols, frame.rows - pixels)));
+            break;
+        case(ShiftLeft) :
+            frame(cv::Rect(pixels, 0, frame.cols - pixels, frame.rows)).copyTo(temp(cv::Rect(0, 0, frame.cols - pixels, frame.rows)));
+            break;
+        default:
+            std::cout << "Shift direction is not set properly" << std::endl;
+    }
+
+    return temp;
+}
+
 int main() {
     cv::Mat I = imread( cv::samples::findFile( "lena.jpg" ), cv::IMREAD_GRAYSCALE);
     if( I.empty()){
@@ -23,6 +53,7 @@ int main() {
         return EXIT_FAILURE;
     }
     cv::imshow("original", I);
+
 
     cv::Mat I1;
     I.copyTo(I1);
@@ -55,10 +86,33 @@ int main() {
      */
 
 
+    /*
+    // https://stackoverflow.com/questions/31561513/strange-result-of-2d-cross-correlation-using-opencvs-matchtemplate-method-in-py
+    // https://stackoverflow.com/questions/28506665/explaing-cross-correlation-and-normalization-for-opencvs-match-template
+    cv::Mat mt;
+    //cv::matchTemplate(I, I1, mt, cv::TM_CCORR_NORMED);
+    //std::cout << mt << std::endl;
+
+    cv::Mat I2;
+    I.copyTo(I2);
+    std::vector<cv::Point> pairs;
+    // too slow
+    for (auto i = 0; i < I.rows; ++i)
+        for (auto j = 0; j < I.cols; ++j) {
+            translateImg(I2, i, j);
+            cv::matchTemplate(I, I2, mt, cv::TM_CCORR_NORMED);
+            if (cv::sum(mt)[0] < 0.2)
+                pairs.emplace_back(i, j);
+        }
+
+    for (auto & e : pairs)
+        std::cout << e << '\n';
+    std::cout << std::endl;
+     */
+
 
     // https://stackoverflow.com/questions/51347829/c-cross-correlation-of-2-shifted-images-with-opencv
     // https://scikit-image.org/docs/0.11.x/auto_examples/plot_register_translation.html
-
     int width = cv::getOptimalDFTSize(std::max(I.cols,I1.cols));
     int height = cv::getOptimalDFTSize(std::max(I.rows,I1.rows));
     cv::Mat fft1;
