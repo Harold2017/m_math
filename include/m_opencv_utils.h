@@ -20,7 +20,7 @@ namespace M_MATH {
         return out;
     }
 
-    void ToVec(cv::Mat const& in, std::vector<float> & out) {
+    inline void ToVec(cv::Mat const& in, std::vector<float> & out) {
         if (in.isContinuous()) {
             // array.assign((float*)mat.datastart, (float*)mat.dataend); // <- has problems for sub-matrix like mat = big_mat.row(i)
             out.assign((float*)in.data, (float*)in.data + in.total()*in.channels());
@@ -29,6 +29,21 @@ namespace M_MATH {
                 out.insert(out.end(), in.ptr<float>(i), in.ptr<float>(i)+in.cols*in.channels());
             }
         }
+    }
+
+    // in should in [0, 1]
+    inline cv::Mat To8U(cv::Mat const& in) {
+        double min, max;
+        cv::minMaxLoc(in, &min, &max);
+        cv::Mat out;
+        if (min != max)
+            in.convertTo(out, CV_8U, 255.0/(max-min),-255.0*min/(max-min));
+        else
+            if (min == 0)
+                out = cv::Mat::zeros(in.rows, in.cols, CV_8U);
+            else
+                out = cv::Mat::ones(in.rows, in.cols, CV_8U);
+        return out;
     }
 }
 
