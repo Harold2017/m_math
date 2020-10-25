@@ -9,6 +9,7 @@
 #include <CGAL/convex_hull_2.h>
 #include <CGAL/Polygon_2.h>
 #include "m_curvefit.h"
+#include "utils.h"
 
 namespace M_MATH {
     namespace GEO {

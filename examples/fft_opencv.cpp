@@ -2,8 +2,6 @@
 // Created by Harold on 2020/10/10.
 //
 
-// code from: https://docs.opencv.org/4.4.0/d8/d01/tutorial_discrete_fourier_transform.html
-
 #include "m_fft_opencv.h"
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -49,7 +47,7 @@ int main()
         for (auto j = 0; j < N_; ++j)
             pts1[j * M_ + i] = pts[i][j];
 
-    cv::Mat I = ToMat(M_, N_, pts1.data());
+    cv::Mat I = M_MATH::ToMat(M_, N_, pts1.data());
 
 
     cv::Mat mag, phase;

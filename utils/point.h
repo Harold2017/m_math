@@ -7,7 +7,7 @@
 
 #include <ostream>
 #include <cmath>
-#include "utils.h"
+#include "traits.h"
 
 template<typename T,
         typename = EnableIfFloatingPoint<T>>
@@ -52,10 +52,10 @@ struct Point3D {
     friend std::ostream& operator<<(std::ostream& os, const Point3D& point) {
         return os << "(" << point.x << ", " << point.y << ", " << point.z << ")";
     }
-    friend T dot(const Point3D<T>& p1, const Point3D<T>& p2) {
+    static T dot(const Point3D<T>& p1, const Point3D<T>& p2) {
         return p1.x * p2.x + p1.y * p2.y + p1.z * p2.z;
     }
-    friend Point3D<T> cross(const Point3D<T>& p1, const Point3D<T>& p2) {
+    static Point3D<T> cross(const Point3D<T>& p1, const Point3D<T>& p2) {
         return Point3D<T>(p1.y * p2.z - p1.z * p2.y, p1.z * p2.x - p1.x * p2.z, p1.x * p2.y - p1.y * p2.x);
     }
 };

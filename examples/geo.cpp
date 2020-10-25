@@ -10,6 +10,7 @@
 #include "point.h"
 #include "m_geo.h"
 #include "utils.h"
+#include "example_utils.h"
 
 using namespace M_MATH::GEO;
 
