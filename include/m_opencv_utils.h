@@ -20,6 +20,20 @@ namespace M_MATH {
         return out;
     }
 
+    // copy data from array to mat
+    inline cv::Mat ToMatCopy(size_t rows, size_t cols, float *data) {
+        cv::Mat out(rows, cols, CV_32FC1);
+        std::memcpy(out.data, data, rows * cols * sizeof(float));
+        return out;
+    }
+
+    inline cv::Mat ToMatCopy(size_t rows, size_t cols, double *data) {
+        cv::Mat out(rows, cols, CV_64FC1);
+        std::memcpy(out.data, data, rows * cols * sizeof(double));
+        out.convertTo(out, CV_32FC1);
+        return out;
+    }
+
     inline void ToVec(cv::Mat const& in, std::vector<float> & out) {
         if (in.isContinuous()) {
             // array.assign((float*)mat.datastart, (float*)mat.dataend); // <- has problems for sub-matrix like mat = big_mat.row(i)
