@@ -18,27 +18,27 @@ int main() {
 
     // find peaks
     cv::Mat peaks;
-    M_MATH::p2d::GetLocalMaxima(I, peaks, 3);
+    M_MATH::p2d::GetLocalMaxima(I, peaks, 3, 0);
     cv::imshow("peaks", peaks);
     // set all non-zero pixel to 1
     cv::threshold(peaks, peaks, 0, 255, cv::THRESH_BINARY);
     //cv::imshow("peaks_1", res);
 
     // use laplacian to calculate mean principal curvature
-    cv::Mat dst, abs_dst;
-    cv::Laplacian(I, dst, CV_16S, 3, 1, 0, cv::BORDER_DEFAULT);
-    // converting back to CV_8U, notice abs here
-    cv::convertScaleAbs(dst, abs_dst);
-    cv::imshow("laplacian", abs_dst);
+    cv::Mat dst;
+    cv::Laplacian(I, dst, I.type(), 1, 1, 0, cv::BORDER_DEFAULT);
+    cv::imshow("laplacian", dst);
 
     // select only peaks
-    cv::bitwise_and(abs_dst, peaks, abs_dst);
-    cv::imshow("selected", abs_dst);
+    cv::bitwise_and(dst, peaks, dst);
+    cv::imshow("selected", dst);
 
     cv::waitKey();
 
-    // abs of peak mean principal curvature
-    auto mpc = cv::sum(abs_dst)[0] / 2;
+    // peak mean principal curvature
+    std::vector<cv::Point> peak_pts;
+    cv::findNonZero(peaks, peak_pts);
+    auto mpc = cv::sum(dst)[0] / double(2 * peak_pts.size());
     std::cout << mpc << std::endl;
 
     return 0;
