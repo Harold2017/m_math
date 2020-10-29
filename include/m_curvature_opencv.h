@@ -13,7 +13,7 @@ namespace M_MATH {
         // use laplacian to calculate mean principal curvature
         cv::Mat dst;
         cv::Laplacian(in, dst, in.type(), kSize, 1, 0, cv::BORDER_DEFAULT);
-        return cv::sum(dst)[0] / 2;
+        return cv::sum(dst)[0] / double(2 * dst.total());
     }
 }
 
