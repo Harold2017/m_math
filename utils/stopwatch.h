@@ -7,34 +7,98 @@
 
 #include <chrono>
 #include <iostream>
+#include <sstream>
 
-struct StopWatch
+struct BlockWatch
 {
     std::string name;
-    std::chrono::high_resolution_clock::time_point p;
+    std::chrono::high_resolution_clock::time_point start_time;
     std::ostream &log;
-    explicit StopWatch(std::string n, std::ostream& os = std::cout)
+    explicit BlockWatch(std::string n, std::ostream& os = std::cout)
         : name(std::move(n)),
-          p(std::chrono::high_resolution_clock::now()),
+          start_time(std::chrono::high_resolution_clock::now()),
           log(os) { }
-    ~StopWatch()
+    ~BlockWatch()
     {
-        using dura_nano = std::chrono::nanoseconds;
-        using dura_micro = std::chrono::microseconds;
-        using dura_mili = std::chrono::milliseconds;
-        auto d = std::chrono::high_resolution_clock::now() - p;
-        log << name << ": "
-            << std::chrono::duration_cast<dura_nano>(d).count()
-            << " ns, "
-            << std::chrono::duration_cast<dura_micro >(d).count()
-            << " us, "
-            << std::chrono::duration_cast<dura_mili >(d).count()
-            << " ms"
-            << std::endl;
+        auto ns = std::chrono::high_resolution_clock::now() - start_time;
+        auto m = std::chrono::duration_cast<std::chrono::minutes>(ns);
+        ns -= m;
+        auto s = std::chrono::duration_cast<std::chrono::seconds>(ns);
+        ns -= s;
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(ns);
+        ns -= ms;
+        auto us = std::chrono::duration_cast<std::chrono::microseconds>(ns);
+        ns -= us;
+        log << name << ": ";
+        if (m.count())
+            log << m.count() << " minutes ";
+        if (s.count())
+            log << s.count() << " s ";
+        if (ms.count())
+            log << ms.count() << " ms ";
+        if (us.count())
+            log << us.count() << " us ";
+        log << ns.count() << " ns" << '\n';
     }
 };
 
-#define TIME_BLOCK(name) StopWatch _pfinstance(name)
-#define TIME_BLOCK_WITH_LOG(name, log) StopWatch _pfinstance(name, log)
+class StopWatch {
+public:
+    enum TimeFormat{ NANOSECONDS, MICROSECONDS, MILLISECONDS, SECONDS };
+
+public:
+    explicit StopWatch(std::string n, TimeFormat fmt, std::ostream& os = std::cout)
+        : name(std::move(n)),
+          log(os),
+          fmt(fmt) { }
+
+    void start() {
+        start_time = std::chrono::high_resolution_clock::now();
+    }
+
+    void stop() {
+        auto duration = std::chrono::high_resolution_clock::now() - start_time;
+        auto ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+        log << name << ": " << get_ticks_str(ns_count) << '\n';
+    }
+
+private:
+    std::string name;
+    std::ostream &log;
+    typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_pt;
+    time_pt start_time;
+    TimeFormat fmt;
+
+    std::string get_ticks_str(long long ns_count) {
+        std::stringstream buffer;
+        switch(fmt) {
+            case TimeFormat::NANOSECONDS: {
+                buffer << ns_count << " ns";
+                return buffer.str();
+            }
+            case TimeFormat::MICROSECONDS: {
+                std::uint64_t up = ((ns_count / 100) % 10 >= 5) ? 1 : 0;
+                const auto mus_count = (ns_count / 1000) + up;
+                buffer << mus_count << " us";
+                return buffer.str();
+            }
+            case TimeFormat::MILLISECONDS: {
+                std::uint64_t up = ((ns_count / 100000) % 10 >= 5) ? 1 : 0;
+                const auto ms_count = (ns_count / 1000000) + up;
+                buffer << ms_count << " ms";
+                return buffer.str();
+            }
+            case TimeFormat::SECONDS: {
+                std::uint64_t up = ((ns_count / 100000000) % 10 >= 5) ? 1 : 0;
+                const auto s_count = (ns_count / 1000000000) + up;
+                buffer << s_count << " s";
+                return buffer.str();
+            }
+        }
+    }
+};
+
+#define TIME_BLOCK(name) BlockWatch _pfinstance(name)
+#define TIME_BLOCK_WITH_LOG(name, log) BlockWatch _pfinstance(name, log)
 
 #endif //M_MATH_STOPWATCH_H
