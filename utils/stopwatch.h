@@ -47,6 +47,7 @@ public:
     enum TimeFormat{ NANOSECONDS, MICROSECONDS, MILLISECONDS, SECONDS };
 
 public:
+    StopWatch(): name(), log(std::cout), fmt(NANOSECONDS) {}
     explicit StopWatch(std::string n, TimeFormat fmt, std::ostream& os = std::cout)
         : name(std::move(n)),
           log(os),
@@ -60,6 +61,26 @@ public:
         auto duration = std::chrono::high_resolution_clock::now() - start_time;
         auto ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
         log << name << ": " << get_ticks_str(ns_count) << '\n';
+    }
+
+    void stop(std::string const& n) {
+        auto duration = std::chrono::high_resolution_clock::now() - start_time;
+        auto ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+        log << n << ": " << get_ticks_str(ns_count) << '\n';
+    }
+
+    void stop(std::string const& n, TimeFormat _fmt) {
+        auto duration = std::chrono::high_resolution_clock::now() - start_time;
+        auto ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+        fmt = _fmt;
+        log << n << ": " << get_ticks_str(ns_count) << '\n';
+    }
+
+    void stop(std::string const& n, TimeFormat _fmt, std::ostream& os) {
+        auto duration = std::chrono::high_resolution_clock::now() - start_time;
+        auto ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+        fmt = _fmt;
+        os << n << ": " << get_ticks_str(ns_count) << '\n';
     }
 
 private:

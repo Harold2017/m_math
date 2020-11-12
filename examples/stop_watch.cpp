@@ -27,5 +27,16 @@ int main() {
             cnt++;
     }
 
+    sw.start();
+    for (auto i = 0; i < 10000; i++)
+        cnt++;
+    sw.stop("another name");
+
+    StopWatch sw1;
+    sw1.start();
+    sw1.stop();
+    sw1.stop("any");
+    sw1.stop("any", StopWatch::MICROSECONDS);
+    sw1.stop("any", StopWatch::MICROSECONDS, std::cerr);
     return 0;
 }
