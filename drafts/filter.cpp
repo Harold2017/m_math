@@ -290,7 +290,7 @@ int main() {
 
     // high pass
     cv::Mat out;
-    HighPass(I, out, 3);
+    HighPass2D(I, out, 3);
     std::cout << out << std::endl;
 
     //ToVec(out, n_x);
@@ -298,17 +298,17 @@ int main() {
 
     // low pass
     cv::Mat out1;
-    LowPass(I, out1, 3);
+    LowPass2D(I, out1, 3);
     std::cout << out1 << std::endl;
 
     // band pass
     cv::Mat out2;
-    BandPass(I, out2, 3, 5);
+    BandPass2D(I, out2, 3, 5);
     std::cout << out2 << std::endl;
 
     // band reject
     cv::Mat out3;
-    BandReject(I, out3, 3, 5);
+    BandReject2D(I, out3, 3, 5);
     std::cout << out3 << std::endl;
 
     return 0;

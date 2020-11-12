@@ -19,7 +19,37 @@ namespace M_MATH {
         cv::GaussianBlur(in, out, cv::Size(window_len_x, window_len_y), sigma_x, sigma_y, cv::BORDER_CONSTANT);
     }
 
-    void FilterWithMask(cv::Mat const& in, cv::Mat & out, cv::Mat const& mask) {
+    void HighPass1D(cv::Mat const& in, cv::Mat &out, int cut_off_freq) {
+        M_MATH::ForwardFFT(in, out);
+        for (auto i = 0; i < cut_off_freq * 2; i++)
+            out.at<float>(i) = 0;
+        cv::idft(out, out, cv::DFT_SCALE|cv::DFT_REAL_OUTPUT);
+    }
+
+    void LowPass1D(cv::Mat const& in, cv::Mat &out, int cut_off_freq) {
+        M_MATH::ForwardFFT(in, out);
+        for (auto i = cut_off_freq * 2; i < out.cols * 2; i++)
+            out.at<float>(i) = 0;
+        cv::idft(out, out, cv::DFT_SCALE|cv::DFT_REAL_OUTPUT);
+    }
+
+    void BandPass1D(cv::Mat const& in, cv::Mat &out, int cut_off_freq_l, int cut_off_freq_r) {
+        M_MATH::ForwardFFT(in, out);
+        for (auto i = 0; i < cut_off_freq_l * 2; i++)
+            out.at<float>(i) = 0;
+        for (auto i = cut_off_freq_r * 2; i < out.cols * 2; i++)
+            out.at<float>(i) = 0;
+        cv::idft(out, out, cv::DFT_SCALE|cv::DFT_REAL_OUTPUT);
+    }
+
+    void BandReject1D(cv::Mat const& in, cv::Mat &out, int cut_off_freq_l, int cut_off_freq_r) {
+        M_MATH::ForwardFFT(in, out);
+        for (auto i = cut_off_freq_l * 2; i < cut_off_freq_r * 2; i++)
+            out.at<float>(i) = 0;
+        cv::idft(out, out, cv::DFT_SCALE|cv::DFT_REAL_OUTPUT);
+    }
+
+    void _FilterWithMask(cv::Mat const& in, cv::Mat & out, cv::Mat const& mask) {
         int M = cv::getOptimalDFTSize( in.rows );
         int N = cv::getOptimalDFTSize( in.cols );
         cv::Mat padded;
@@ -51,16 +81,11 @@ namespace M_MATH {
         Rearrange(filtered, filtered);
 
         cv::idft(filtered, out, cv::DFT_SCALE|cv::DFT_REAL_OUTPUT);
-
-        // normalize to original scale
-        double min, max;
-        cv::minMaxLoc(in, &min, &max);
-        cv::normalize(out, out, min, max, cv::NORM_MINMAX, CV_32FC1);
     }
 
     // High pass
     // for cutoff_feq, 0 is center
-    void HighPass(cv::Mat const& in, cv::Mat & out, int cutoff_feq) {
+    void HighPass2D(cv::Mat const& in, cv::Mat & out, int cutoff_feq) {
         int M = cv::getOptimalDFTSize( in.rows );
         int N = cv::getOptimalDFTSize( in.cols );
         // circle mask
@@ -69,12 +94,12 @@ namespace M_MATH {
         cv::circle(mask, center, cutoff_feq, CV_RGB(255, 255, 255), -1);
         cv::bitwise_not(mask, mask);
         mask.convertTo(mask, CV_32FC1);
-        FilterWithMask(in, out, mask);
+        _FilterWithMask(in, out, mask);
     }
 
     // Low pass
     // for cutoff_feq, 0 is center
-    void LowPass(cv::Mat const& in, cv::Mat & out, int cutoff_feq) {
+    void LowPass2D(cv::Mat const& in, cv::Mat & out, int cutoff_feq) {
         int M = cv::getOptimalDFTSize( in.rows );
         int N = cv::getOptimalDFTSize( in.cols );
 
@@ -83,12 +108,12 @@ namespace M_MATH {
         auto center = cv::Point(M/2, N/2);
         cv::circle(mask, center, cutoff_feq, CV_RGB(255, 255, 255), -1);
         mask.convertTo(mask, CV_32FC1);
-        FilterWithMask(in, out, mask);
+        _FilterWithMask(in, out, mask);
     }
 
     // Band pass
     // for (cutoff_feq_l, cutoff_feq_h), 0 is center
-    void BandPass(cv::Mat const& in, cv::Mat & out, int cutoff_feq_l, int cutoff_feq_h) {
+    void BandPass2D(cv::Mat const& in, cv::Mat & out, int cutoff_feq_l, int cutoff_feq_h) {
         int M = cv::getOptimalDFTSize( in.rows );
         int N = cv::getOptimalDFTSize( in.cols );
 
@@ -98,12 +123,12 @@ namespace M_MATH {
         cv::circle(mask, center, cutoff_feq_h, CV_RGB(255, 255, 255), -1);
         cv::circle(mask, center, cutoff_feq_l, CV_RGB(0, 0, 0), -1);
         mask.convertTo(mask, CV_32FC1);
-        FilterWithMask(in, out, mask);
+        _FilterWithMask(in, out, mask);
     }
 
     // Band reject
     // for [0, cutoff_feq_l] && [cutoff_feq_h, infinite], 0 is center
-    void BandReject(cv::Mat const& in, cv::Mat & out, int cutoff_feq_l, int cutoff_feq_h) {
+    void BandReject2D(cv::Mat const& in, cv::Mat & out, int cutoff_feq_l, int cutoff_feq_h) {
         int M = cv::getOptimalDFTSize( in.rows );
         int N = cv::getOptimalDFTSize( in.cols );
 
@@ -114,7 +139,7 @@ namespace M_MATH {
         cv::circle(mask, center, cutoff_feq_l, CV_RGB(0, 0, 0), -1);
         cv::bitwise_not(mask, mask);
         mask.convertTo(mask, CV_32FC1);
-        FilterWithMask(in, out, mask);
+        _FilterWithMask(in, out, mask);
     }
 }
 

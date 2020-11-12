@@ -69,12 +69,14 @@ target_link_libraries(m_diff_opencv ${OpenCV_LIBS})
 target_link_libraries(m_mesh_volume_surface_area ${OpenCV_LIBS})
 
 # drafts
-add_executable(d_fitler drafts/filter.cpp)
+add_executable(d_filter drafts/filter.cpp)
 add_executable(d_curvefit drafts/curvefit.cpp)
 add_executable(d_curvature drafts/curvature.cpp)
 add_executable(d_correlation drafts/correlation.cpp)
+add_executable(d_filter1d drafts/filter1d.cpp)
 
-target_link_libraries(d_fitler ${OpenCV_LIBS})
+target_link_libraries(d_filter ${OpenCV_LIBS})
 target_link_libraries(d_curvefit ${OpenCV_LIBS})
 target_link_libraries(d_curvature ${OpenCV_LIBS})
 target_link_libraries(d_correlation ${OpenCV_LIBS})
+target_link_libraries(d_filter1d ${OpenCV_LIBS})
