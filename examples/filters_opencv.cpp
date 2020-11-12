@@ -64,5 +64,32 @@ int main() {
         std::cout << e << ' ';
     std::cout << std::endl;
 
+    cv::imshow("original", I1);
+    // high pass
+    cv::Mat out;
+    HighPass(I1, out, 3);
+    //std::cout << out << std::endl;
+    cv::imshow("high pass", out);
+
+    // low pass
+    cv::Mat out1;
+    LowPass(I1, out1, 3);
+    //std::cout << out1 << std::endl;
+    cv::imshow("low pass", out1);
+
+    // band pass
+    cv::Mat out2;
+    BandPass(I1, out2, 3, 5);
+    //std::cout << out2 << std::endl;
+    cv::imshow("band pass", out1);
+
+    // band reject
+    cv::Mat out3;
+    BandReject(I1, out3, 3, 5);
+    //std::cout << out3 << std::endl;
+    cv::imshow("band reject", out1);
+
+    cv::waitKey();
+
     return 0;
 }
