@@ -46,6 +46,7 @@ add_executable(m_autoc_length examples/autoc_length.cpp)
 add_executable(m_stopwatch examples/stop_watch.cpp)
 add_executable(m_diff_opencv examples/diff_opencv.cpp)
 add_executable(m_mesh_volume_surface_area examples/mesh_volume_surface_area.cpp)
+add_executable(m_geo_opencv examples/geo_opencv.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
@@ -67,6 +68,7 @@ target_link_libraries(m_correlation ${OpenCV_LIBS})
 target_link_libraries(m_autoc_length ${OpenCV_LIBS})
 target_link_libraries(m_diff_opencv ${OpenCV_LIBS})
 target_link_libraries(m_mesh_volume_surface_area ${OpenCV_LIBS})
+target_link_libraries(m_geo_opencv ${OpenCV_LIBS})
 
 # drafts
 add_executable(d_filter drafts/filter.cpp)
