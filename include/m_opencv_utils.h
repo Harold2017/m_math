@@ -59,6 +59,33 @@ namespace M_MATH {
                 out = cv::Mat::ones(in.rows, in.cols, CV_8U);
         return out;
     }
+
+    bool IsEqual(const cv::Mat Mat1, const cv::Mat Mat2)
+    {
+        if( Mat1.dims == Mat2.dims &&
+            Mat1.size == Mat2.size &&
+            Mat1.elemSize() == Mat2.elemSize())
+        {
+            if( Mat1.isContinuous() && Mat2.isContinuous())
+            {
+                return 0 == memcmp( Mat1.ptr(), Mat2.ptr(), Mat1.total()*Mat1.elemSize());
+            }
+            else
+            {
+                // a null terminated list of pointers
+                const cv::Mat* arrays[] = {&Mat1, &Mat2, nullptr};
+                uchar* ptrs[2];
+                cv::NAryMatIterator it( arrays, ptrs, 2);
+                for(unsigned int p = 0; p < it.nplanes; p++, ++it)
+                    if( 0 != memcmp( it.ptrs[0], it.ptrs[1], it.size*Mat1.elemSize()) )
+                        return false;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 #endif //M_MATH_M_OPENCV_UTILS_H
