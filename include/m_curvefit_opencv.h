@@ -20,6 +20,7 @@ namespace M_MATH {
         double get_slope() { return m_coefficient[1]; };
         double get_intercept() { return m_coefficient[0]; };
         void clear() { m_coefficient.clear(); }
+        double get_RSquare(double const* x, double const* y, size_t length) const;
 
     private:
         std::map<size_t, double> m_coefficient;
@@ -75,6 +76,19 @@ namespace M_MATH {
         if (it != m_coefficient.end())
             return it->second;
         return 0.0;
+    }
+
+    inline double CurveFitCV::get_RSquare(double const* x, double const* y, size_t length) const {
+        double mean{0};
+        for (auto i = 0; i < length; ++i)
+            mean += y[i];
+        mean /= length;
+        double Stot{0}, Sres{0};
+        for (auto i = 0; i < length; ++i) {
+            Stot += std::pow(y[i] - mean, 2);
+            Sres += std::pow(y[i] - getY(x[i]), 2);
+        }
+        return 1.0 - Sres/Stot;
     }
 }
 

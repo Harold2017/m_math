@@ -13,14 +13,29 @@ int main() {
     auto cf = M_MATH::CurveFitCV();
     cf.polyfit(x.data(), y.data(), x.size(), 1);
     std::cout << "slope: " << cf.get_slope() << ", intercept: " << cf.get_intercept() << std::endl;
+    std::cout << "R2: " << cf.get_RSquare(x.data(), y.data(), x.size()) << std::endl;
 
     std::vector<double> y1(x.size());
     for (auto i = 0; i < y1.size(); ++i)
         y1[i] = std::exp(x[i]);
 
+    // fit with poly_n = 1
+    cf.polyfit(x.data(), y1.data(), x.size(), 1);
+    std::cout << "y1 at x = " << x[5] << ": " << cf.getY(x[5]) <<
+              ", diff: " << y1[5] - cf.getY(x[5]) << std::endl;
+    std::cout << "R2: " << cf.get_RSquare(x.data(), y1.data(), x.size()) << std::endl;
+
+    // fit with poly_n = 2
+    cf.polyfit(x.data(), y1.data(), x.size(), 2);
+    std::cout << "y1 at x = " << x[5] << ": " << cf.getY(x[5]) <<
+              ", diff: " << y1[5] - cf.getY(x[5]) << std::endl;
+    std::cout << "R2: " << cf.get_RSquare(x.data(), y1.data(), x.size()) << std::endl;
+
+    // fit with poly_n = 5
     cf.polyfit(x.data(), y1.data(), x.size(), 5);
     std::cout << "y1 at x = " << x[5] << ": " << cf.getY(x[5]) <<
               ", diff: " << y1[5] - cf.getY(x[5]) << std::endl;
+    std::cout << "R2: " << cf.get_RSquare(x.data(), y1.data(), x.size()) << std::endl;
 
     std::vector<double> y1f(x.size());
     cf.getYs(x.begin(), x.end(), y1f.begin());
