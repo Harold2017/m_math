@@ -20,6 +20,12 @@ namespace M_MATH {
         return out;
     }
 
+    // vector<Point3> to Mat (n X 3)
+    template<typename T>
+    inline cv::Mat ToMat(std::vector<cv::Point3_<T>> const& pts) {
+        return cv::Mat(pts).reshape(1);
+    }
+
     // copy data from array to mat
     inline cv::Mat ToMatCopy(size_t rows, size_t cols, float *data) {
         cv::Mat out(rows, cols, CV_32FC1);
@@ -43,6 +49,11 @@ namespace M_MATH {
                 out.insert(out.end(), in.ptr<float>(i), in.ptr<float>(i)+in.cols*in.channels());
             }
         }
+    }
+
+    // Mat (n X 3) to vector<Point3>
+    inline void ToVec(cv::Mat const& in, std::vector<cv::Point3f> & out) {
+        in.reshape(3, in.rows * in.cols).copyTo(out);
     }
 
     // in should in [0, 1]
