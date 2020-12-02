@@ -84,3 +84,7 @@ target_link_libraries(d_curvefit ${OpenCV_LIBS})
 target_link_libraries(d_curvature ${OpenCV_LIBS})
 target_link_libraries(d_correlation ${OpenCV_LIBS})
 target_link_libraries(d_filter1d ${OpenCV_LIBS})
+
+# building info
+add_executable(opencv_building_info examples/opencv_building_info.cpp)
+target_link_libraries(opencv_building_info ${OpenCV_LIBS})
