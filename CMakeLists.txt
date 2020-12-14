@@ -15,6 +15,9 @@ set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+find_package(Open3D REQUIRED)
+include_directories(${Open3D_INCLUDE_DIRS})
+
 include_directories(
         include
         utils)
@@ -48,6 +51,7 @@ add_executable(m_diff_opencv examples/diff_opencv.cpp)
 add_executable(m_mesh_volume_surface_area examples/mesh_volume_surface_area.cpp)
 add_executable(m_geo_opencv examples/geo_opencv.cpp)
 add_executable(m_io_opencv examples/io_opencv.cpp)
+add_executable(m_mesh examples/mesh.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
@@ -71,6 +75,7 @@ target_link_libraries(m_diff_opencv ${OpenCV_LIBS})
 target_link_libraries(m_mesh_volume_surface_area ${OpenCV_LIBS})
 target_link_libraries(m_geo_opencv ${OpenCV_LIBS})
 target_link_libraries(m_io_opencv ${OpenCV_LIBS})
+target_link_libraries(m_mesh ${Open3D_LIBRARIES})
 
 # drafts
 add_executable(d_filter drafts/filter.cpp)
