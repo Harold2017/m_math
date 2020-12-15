@@ -52,6 +52,7 @@ add_executable(m_mesh_volume_surface_area examples/mesh_volume_surface_area.cpp)
 add_executable(m_geo_opencv examples/geo_opencv.cpp)
 add_executable(m_io_opencv examples/io_opencv.cpp)
 add_executable(m_mesh examples/mesh.cpp)
+add_executable(m_filters_opencv_1 examples/filters_opencv_1.cpp)
 
 target_link_libraries(m_interp GSL::gsl GSL::gslcblas)
 target_link_libraries(m_fft ${FFTW_LIBRARIES})
@@ -76,6 +77,7 @@ target_link_libraries(m_mesh_volume_surface_area ${OpenCV_LIBS})
 target_link_libraries(m_geo_opencv ${OpenCV_LIBS})
 target_link_libraries(m_io_opencv ${OpenCV_LIBS})
 target_link_libraries(m_mesh ${Open3D_LIBRARIES})
+target_link_libraries(m_filters_opencv_1 ${OpenCV_LIBS})
 
 # drafts
 add_executable(d_filter drafts/filter.cpp)
