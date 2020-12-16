@@ -4,9 +4,11 @@ set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Suppressing benchmark's tests" FORC
 include_directories(${benchmark_INCLUDE_DIRS})
 
 set(bench_src
+        filters_bench.cpp
         run_all.cpp)
 
 add_executable(bench_m_math ${bench_src})
 
 target_link_libraries(bench_m_math
-        ${benchmark_LIBRARIES} pthread)
+        ${OpenCV_LIBS}
+        benchmark::benchmark)

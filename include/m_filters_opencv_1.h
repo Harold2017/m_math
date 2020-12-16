@@ -264,13 +264,19 @@ namespace M_MATH {
         // create filtered spectrum
         cv::Mat FlpFilter;
         FlpFilter.create(F.size(), F.type());
-        // apply low pass filter
+        // apply filter
+        /*
         for (auto r = 0; r < lpFilter.rows; ++r)
             for (auto c = 0; c < lpFilter.cols; ++c) {
                 auto F_rc = F.at<cv::Vec2f>(r, c);
                 auto lpFilter_rc = lpFilter.at<float>(r, c);
                 FlpFilter.at<cv::Vec2f>(r, c) = F_rc * lpFilter_rc;
             }
+        */
+        cv::Mat filter;
+        cv::Mat tmp[] = {lpFilter, lpFilter};
+        cv::merge(tmp, 2, filter);
+        FlpFilter = F.mul(filter);
 #ifdef DEBUG_PLOT
         cv::Mat FlpSpectrum;
         amplitudeSpectrum(FlpFilter, FlpSpectrum);
