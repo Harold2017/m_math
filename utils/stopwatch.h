@@ -95,27 +95,28 @@ private:
         switch(fmt) {
             case TimeFormat::NANOSECONDS: {
                 buffer << ns_count << " ns";
-                return buffer.str();
+                break;
             }
             case TimeFormat::MICROSECONDS: {
                 std::uint64_t up = ((ns_count / 100) % 10 >= 5) ? 1 : 0;
                 const auto mus_count = (ns_count / 1000) + up;
                 buffer << mus_count << " us";
-                return buffer.str();
+                break;
             }
             case TimeFormat::MILLISECONDS: {
                 std::uint64_t up = ((ns_count / 100000) % 10 >= 5) ? 1 : 0;
                 const auto ms_count = (ns_count / 1000000) + up;
                 buffer << ms_count << " ms";
-                return buffer.str();
+                break;
             }
             case TimeFormat::SECONDS: {
                 std::uint64_t up = ((ns_count / 100000000) % 10 >= 5) ? 1 : 0;
                 const auto s_count = (ns_count / 1000000000) + up;
                 buffer << s_count << " s";
-                return buffer.str();
+                break;
             }
         }
+        return buffer.str();
     }
 };
 
