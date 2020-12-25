@@ -17,6 +17,15 @@ namespace M_MATH {
         };
     public:
         static std::shared_ptr<open3d::geometry::TriangleMesh> GenMesh(std::vector<cv::Point3f> const& pts, MeshType type);
+        static bool SaveMesh(std::string const& filename, std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
+                             bool write_ascii = false,
+                             bool compressed = false,
+                             bool write_vertex_normals = true,
+                             bool write_vertex_colors = true,
+                             bool write_triangle_uvs = true,
+                             bool print_progress = false);
+        static std::shared_ptr<open3d::geometry::TriangleMesh> LoadMesh(std::string const& filename,
+                                                                        bool print_progress = false);
 
     private:
         static std::shared_ptr<open3d::geometry::PointCloud> ToPointCloud(std::vector<cv::Point3f> const& pts);
@@ -76,6 +85,22 @@ namespace M_MATH {
     TriangleMesh::GenMesh(const std::vector<cv::Point3f> &pts, TriangleMesh::MeshType type) {
         auto pcd = ToPointCloud(pts);
         return GenMesh(pcd, type);
+    }
+
+    bool TriangleMesh::SaveMesh(const std::string &filename, std::shared_ptr<open3d::geometry::TriangleMesh> mesh,
+                                bool write_ascii, bool compressed, bool write_vertex_normals, bool write_vertex_colors,
+                                bool write_triangle_uvs, bool print_progress) {
+        return open3d::io::WriteTriangleMeshToOBJ(filename, *mesh,
+                                                  write_ascii,
+                                                  compressed,
+                                                  write_vertex_normals,
+                                                  write_vertex_colors,
+                                                  write_triangle_uvs,
+                                                  print_progress);
+    }
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> TriangleMesh::LoadMesh(const std::string &filename, bool print_progress) {
+        return open3d::io::CreateMeshFromFile(filename, print_progress);
     }
 }
 

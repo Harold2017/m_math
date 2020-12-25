@@ -32,6 +32,11 @@ int main() {
 
     // sphere
     auto sphere = open3d::geometry::TriangleMesh::CreateSphere();
+    std::cout << "triangles: " << sphere->triangles_.size() << std::endl;
+    std::cout << sphere->GetSurfaceArea() << '\n';
+    if (sphere->IsWatertight())
+        std::cout << sphere->GetVolume() << '\n';
+    std::cout << std::endl;
     //open3d::visualization::DrawGeometries({sphere}, "Test", 1920, 1080);
     // up-sample
     auto pcd = sphere->SamplePointsUniformly(20000);
@@ -42,6 +47,9 @@ int main() {
 
     // TODO: mesh quality is not so good
     auto mesh = M_MATH::TriangleMesh::GenMesh(pts, M_MATH::TriangleMesh::BallPivot);
+
+    // save mesh
+    //M_MATH::TriangleMesh::SaveMesh("mesh.obj", mesh);
 
     std::cout << "triangles: " << mesh->triangles_.size() << std::endl;
 
@@ -56,9 +64,18 @@ int main() {
     std::cout << std::endl;
 
     // filter mesh
-    mesh->FilterSmoothTaubin(10);
-    open3d::visualization::DrawGeometries({mesh}, "Test", 1920, 1080);
+    //mesh->FilterSmoothTaubin(10);
+    //open3d::visualization::DrawGeometries({mesh}, "Test", 1920, 1080);
 
+    // after ManifoldPlus
+    // load mesh
+    auto mesh_1 = M_MATH::TriangleMesh::LoadMesh("out.obj");
+    open3d::visualization::DrawGeometries({mesh_1}, "Test", 1920, 1080);
+    std::cout << "triangles: " << mesh_1->triangles_.size() << std::endl;
+    std::cout << mesh_1->GetSurfaceArea() << '\n';
+    if (mesh_1->IsWatertight())
+        std::cout << mesh_1->GetVolume() << '\n';
+    std::cout << std::endl;
 
     return 0;
 }
