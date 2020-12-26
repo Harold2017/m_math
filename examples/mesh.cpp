@@ -32,6 +32,7 @@ int main() {
 
     // sphere
     auto sphere = open3d::geometry::TriangleMesh::CreateSphere();
+    std::cout << "points: " << sphere->vertices_.size() << std::endl;
     std::cout << "triangles: " << sphere->triangles_.size() << std::endl;
     std::cout << sphere->GetSurfaceArea() << '\n';
     if (sphere->IsWatertight())
@@ -45,7 +46,7 @@ int main() {
     //open3d::visualization::DrawGeometries({pcd}, "Test", 1920, 1080);
     auto pts = ToVec3f(pcd->points_);
 
-    // TODO: mesh quality is not so good
+    // TODO: mesh quality is not so good and why surface area change strangely?
     auto mesh = M_MATH::TriangleMesh::GenMesh(pts, M_MATH::TriangleMesh::BallPivot);
 
     // save mesh
@@ -76,6 +77,26 @@ int main() {
     if (mesh_1->IsWatertight())
         std::cout << mesh_1->GetVolume() << '\n';
     std::cout << std::endl;
+
+    // remove redundant triangles (no effect here)
+    //auto mesh_2 = std::make_shared<open3d::geometry::TriangleMesh>(mesh_1->RemoveDuplicatedVertices().RemoveDegenerateTriangles().RemoveDuplicatedTriangles());
+    //std::cout << "triangles: " << mesh_2->triangles_.size() << std::endl;
+    //std::cout << mesh_2->GetSurfaceArea() << '\n';
+    //if (mesh_2->IsWatertight())
+    //    std::cout << mesh_2->GetVolume() << '\n';
+    //std::cout << std::endl;
+
+    // simplification
+    auto bound_1 = mesh_1->GetMaxBound() - mesh_1->GetMinBound();
+    auto voxel_size_1 = *std::max_element(bound_1.begin(), bound_1.end()) / 16;
+    std::cout << "voxel_size: " << voxel_size_1 << std::endl;
+    auto mesh_11 = mesh_1->SimplifyVertexClustering(voxel_size_1, open3d::geometry::HalfEdgeTriangleMesh::SimplificationContraction::Average);
+    std::cout << "triangles: " << mesh_11->triangles_.size() << std::endl;
+    std::cout << mesh_11->GetSurfaceArea() << '\n';
+    if (mesh_11->IsWatertight())
+        std::cout << mesh_11->GetVolume() << '\n';
+    std::cout << std::endl;
+    open3d::visualization::DrawGeometries({mesh_11}, "Test", 1920, 1080);
 
     return 0;
 }
