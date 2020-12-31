@@ -48,5 +48,7 @@ int main() {
     for (auto const& e : pts_xaxis)
         assert(std::abs(e.z) <= 0.05 && std::abs(e.y) <= 0.05);
 
+    auto ppts = CrossSectionProject2D(pts, {-1, 0}, {1, 0}, 0.05f);
+    std::cout << ppts << std::endl;
     return 0;
 }

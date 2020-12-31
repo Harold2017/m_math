@@ -126,6 +126,49 @@ namespace M_MATH {
         auto pts = PointsWithinDistanceToReferencePlane(begin, end, plane_normal_0, plane_center_0, threshold_0);
         return PointsWithinDistanceToReferencePlane(pts.begin(), pts.end(), plane_normal_1, plane_center_1, threshold_1);
     }
+
+    /**
+     * from top view, cut model along z direction with the line formed by 2 points
+     * @tparam T
+     * @param points
+     * @param p1
+     * @param p2
+     * @return  2D points on cross section plane
+     */
+    template<typename T>
+    std::vector<cv::Point_<T>> CrossSectionProject2D(std::vector<cv::Point3_<T>> const& points,
+                                                     cv::Point_<T> const& p1,
+                                                     cv::Point_<T> const& p2,
+                                                     T threshold) {
+
+        // line direction
+        auto abs = std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2));
+        cv::Point_<T> dir((p2.x - p1.x)/abs, (p2.y - p1.y)/abs);
+        // line normal
+        cv::Point_<T> norm((p1.y - p2.y)/abs, (p2.x - p1.x)/abs);
+        std::vector<cv::Point3_<T>> plane_pts;
+        // plane normal, plane center
+        cv::Point3_<T> plane_normal(norm.x, norm.y, 0);
+        cv::Point3_<T> plane_center(p1.x, p1.y, 0);
+        plane_pts.reserve(points.size());
+        for (auto const& pt : points)
+            if (std::abs((pt - plane_center).dot(plane_normal)) <= threshold)
+                plane_pts.push_back(pt);
+
+        std::vector<cv::Point_<T>> res;
+        res.reserve(plane_pts.size());
+        // project point to line
+        for (auto const& pt : plane_pts)
+            res.emplace_back(pt.x * dir.x + pt.y * dir.y,
+                             pt.z);
+        // sort and remove duplicates
+        std::sort(res.begin(), res.end(), [](cv::Point_<T> const& pt1,
+                                             cv::Point_<T> const& pt2) {
+            return pt1.x < pt2.x;
+        });
+        res.erase(std::unique(res.begin(), res.end()), res.end());
+        return res;
+    }
 }
 
 #endif //M_MATH_M_GEO_OPENCV_H
