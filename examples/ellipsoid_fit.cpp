@@ -1,10 +1,10 @@
 //
-// Created by Harold on 2021/2/2.
+// Created by Harold on 2021/2/4.
 //
 
 #include <iostream>
 #include <random>
-#include "m_surface_fit.hpp"
+#include "m_ellipsoid_fit.hpp"
 
 double get_random()
 {
@@ -34,7 +34,6 @@ Eigen::Matrix<double, Eigen::Dynamic, 3> ellipsoid_gen(Eigen::Vector3d const& ce
 
     return points;
 }
-
 
 int main() {
     Eigen::Vector3d center, radii;

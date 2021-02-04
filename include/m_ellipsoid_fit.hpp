@@ -1,49 +1,14 @@
 //
-// Created by Harold on 2021/2/2.
+// Created by Harold on 2021/2/4.
 //
 
-#ifndef M_MATH_M_SURFACE_FIT_HPP
-#define M_MATH_M_SURFACE_FIT_HPP
+#ifndef M_MATH_M_ELLIPSOID_FIT_HPP
+#define M_MATH_M_ELLIPSOID_FIT_HPP
 
 #include <opencv2/core.hpp>
 #include <eigen3/Eigen/Eigen>
 
 namespace M_MATH {
-    /**
-     * \fn  fit plane by PCA
-     * @tparam T  floating point type
-     * @param pts  pts on plane
-     * @return  plane normal and plane center pair
-     */
-    template<typename T>
-    std::pair<cv::Point3_<T>, cv::Point3_<T>> PlaneFit(std::vector<cv::Point3_<T>> const& pts) {
-        cv::Mat covariance_matrix, mean;
-        auto rows = pts.size();
-
-        // construct covariance matrix for plane PCA
-        cv::calcCovarMatrix(cv::Mat(pts).reshape(1), covariance_matrix, mean, cv::COVAR_NORMAL | cv::COVAR_ROWS);
-        covariance_matrix = covariance_matrix / (rows - 1);
-
-        // center
-        cv::Point3_<T> plane_center;
-        plane_center.x = mean.at<double>(0, 0);
-        plane_center.y = mean.at<double>(0, 1);
-        plane_center.z = mean.at<double>(0, 2);
-
-        cv::Mat eig_val, eig_vec;
-        cv::eigen(covariance_matrix, eig_val, eig_vec);
-
-        // normal
-        cv::Point3_<T> plane_normal;
-        plane_normal.x = eig_vec.at<double>(2, 0);
-        plane_normal.y = eig_vec.at<double>(2, 1);
-        plane_normal.z = eig_vec.at<double>(2, 2);
-
-        // curvature
-        //auto plane_curvature = eig_val.at<double>(2) / (eig_val.at<double>(0) + eig_val.at<double>(1) + eig_val.at<double>(2));
-        return std::make_pair(plane_normal, plane_center);
-    }
-
     /**
      * \fn fit ellipsoid
      * Ax^2 + By^2 + Cz^2 + 2Dxy + 2Exz + 2Fyz + 2Gx + 2Hy + 2Iz = 1
@@ -109,9 +74,9 @@ namespace M_MATH {
         //       v(7) v(8) v(9) v(10) ];
         Eigen::Matrix4d A;
         A << v(0), v(3), v(4), v(6),
-             v(3), v(1), v(5), v(7),
-             v(4), v(5), v(2), v(8),
-             v(6), v(7), v(8), v(9);
+        v(3), v(1), v(5), v(7),
+        v(4), v(5), v(2), v(8),
+        v(6), v(7), v(8), v(9);
 
         Eigen::Vector3d center, radii;
         // find the center of the ellipsoid
@@ -127,15 +92,13 @@ namespace M_MATH {
         // solve the eigen problem
         Eigen::EigenSolver<Eigen::Matrix3d> solver(R.block<3, 3>(0, 0) / -R(3, 3));
         radii = solver.eigenvalues().cwiseAbs().cwiseInverse().cwiseSqrt();
-        for (size_t i = 0; i < 3; ++i) {
-            if (solver.eigenvalues()(i).real() < 0.) {
+        for (size_t i = 0; i < 3; ++i)
+            if (solver.eigenvalues()(i).real() < 0.)
                 radii(i) = -radii(i);
-            }
-        }
 
-        return std::make_pair(cv::Point3_<T>(center(0), center(1), center(2)),
-                              cv::Point3_<T>(radii(0), radii(1), radii(2)));
+    return std::make_pair(cv::Point3_<T>(center(0), center(1), center(2)),
+            cv::Point3_<T>(radii(0), radii(1), radii(2)));
     }
 }
 
-#endif //M_MATH_M_SURFACE_FIT_HPP
+#endif //M_MATH_M_ELLIPSOID_FIT_HPP
