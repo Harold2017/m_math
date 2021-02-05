@@ -158,28 +158,25 @@ namespace M_MATH {
         std::vector<cv::Point_<T>> res;
         res.reserve(plane_pts.size());
         // project point to line
-        for (auto const& pt : plane_pts)
-            res.emplace_back(pt.x * dir.x + pt.y * dir.y,
-                             pt.z);
+        for (auto const& pt : plane_pts) {
+            auto x = pt.x * dir.x + pt.y * dir.y;
+            // points between p1 and p2
+            if (x < p1.x || x > p2.x)
+                continue;
+            res.emplace_back(x, pt.z);
+        }
         // sort and remove duplicates
         std::sort(res.begin(), res.end(), [](cv::Point_<T> const& pt1,
                                              cv::Point_<T> const& pt2) {
             return pt1.x < pt2.x;
         });
         res.erase(std::unique(res.begin(), res.end()), res.end());
-        // filter out points between p1 and p2
-        auto low = std::lower_bound(res.begin(), res.end(), p1,
-                                    [](cv::Point_<T> const& pt1, cv::Point_<T> const& pt2){ return pt1.x < pt2.x; });
-        auto up = std::upper_bound(res.begin(), res.end(), p2,
-                                   [](cv::Point_<T> const& pt1, cv::Point_<T> const& pt2){ return pt1.x < pt2.x; });
-        std::vector<cv::Point_<T>> filtered(low, up);
-        //std::cout << filtered << std::endl;
 
         // make x axis starts from 0
-        auto filtered_x = filtered[0].x;
-        std::for_each(filtered.begin(), filtered.end(), [=](cv::Point_<T>& pt) { pt.x -= filtered_x; });
-        filtered.shrink_to_fit();
-        return filtered;
+        auto res_x = res[0].x;
+        std::for_each(res.begin(), res.end(), [=](cv::Point_<T>& pt) { pt.x -= res_x; });
+        res.shrink_to_fit();
+        return res;
     }
 }
 
