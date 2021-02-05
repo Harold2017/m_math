@@ -133,7 +133,7 @@ namespace M_MATH {
      * @param points
      * @param p1
      * @param p2
-     * @return  2D points on cross section plane
+     * @return  2D points on cross section plane between p1 and p2 and make p1 as origin
      */
     template<typename T>
     std::vector<cv::Point_<T>> CrossSectionProject2D(std::vector<cv::Point3_<T>> const& points,
@@ -167,7 +167,19 @@ namespace M_MATH {
             return pt1.x < pt2.x;
         });
         res.erase(std::unique(res.begin(), res.end()), res.end());
-        return res;
+        // filter out points between p1 and p2
+        auto low = std::lower_bound(res.begin(), res.end(), p1,
+                                    [](cv::Point_<T> const& pt1, cv::Point_<T> const& pt2){ return pt1.x < pt2.x; });
+        auto up = std::upper_bound(res.begin(), res.end(), p2,
+                                   [](cv::Point_<T> const& pt1, cv::Point_<T> const& pt2){ return pt1.x < pt2.x; });
+        std::vector<cv::Point_<T>> filtered(low, up);
+        //std::cout << filtered << std::endl;
+
+        // make x axis starts from 0
+        auto filtered_x = filtered[0].x;
+        std::for_each(filtered.begin(), filtered.end(), [=](cv::Point_<T>& pt) { pt.x -= filtered_x; });
+        filtered.shrink_to_fit();
+        return filtered;
     }
 }
 
