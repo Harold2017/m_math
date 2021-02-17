@@ -8,7 +8,7 @@
 
 using namespace M_MATH;
 
-int main() {
+int main(int argc, char* argv[]) {
     /*
     // cubic
     std::vector<cv::Point3f> vertices = {{0, 0, 0},
@@ -37,7 +37,9 @@ int main() {
     std::cout << MeshSurface(vertices, triangles) << std::endl;
      */
 
-    auto mesh = M_MATH::TriangleMesh::LoadMesh("x.ply");
+    assert(argc > 1);  // argv[1]: mesh_file, argv[2]: z cross section threshold for volume computation
+
+    auto mesh = M_MATH::TriangleMesh::LoadMesh(argv[1]);
     std::cout //<< "volume: " << mesh->GetVolume() << '\n'
             << "surface area: " << mesh->GetSurfaceArea()
             << std::endl;
@@ -53,11 +55,19 @@ int main() {
         tri.emplace_back(t.x(), t.y(), t.z());
     std::cout << "mesh volume: " << MeshVolume(vert, tri) << std::endl;
     std::cout << "mesh surface: " << MeshSurface(vert, tri) << std::endl;
-    auto min_v = std::min_element(mesh->vertices_.begin(), mesh->vertices_.end(),
-                                  [](Eigen::Vector3d const& v1, Eigen::Vector3d const& v2){
-        return v1.z() < v2.z();
-    });
-    std::cout << "mesh vertex min: " << "[" << min_v->x() << ", " << min_v->y() << ", " << min_v->z() << "]" << std::endl;
-    std::cout << "mesh volume against plane: " << MeshVolume(vert, tri, {0, 0, min_v->z()}, {0, 0, 1});
+
+    if (argc > 2) {
+        std::cout << "mesh height threshold: " << atof(argv[2]) << std::endl;
+        std::cout << "mesh volume against plane: " << MeshVolume(vert, tri, { 0, 0, atof(argv[2])}, { 0, 0, 1 });
+    }
+    else {
+        auto min_v = std::min_element(mesh->vertices_.begin(), mesh->vertices_.end(),
+            [](Eigen::Vector3d const& v1, Eigen::Vector3d const& v2) {
+                return v1.z() < v2.z();
+            });
+        std::cout << "mesh vertex min: " << "[" << min_v->x() << ", " << min_v->y() << ", " << min_v->z() << "]" << std::endl;
+        std::cout << "mesh volume against plane: " << MeshVolume(vert, tri, { 0, 0, min_v->z() }, { 0, 0, 1 }) << std::endl;
+    }
+    
     return 0;
 }
