@@ -6,6 +6,7 @@
 #define M_MATH_M_MESH_VOLUME_SURFACE_AREA_H
 
 #include <opencv2/core.hpp>
+#include <omp.h>
 
 namespace M_MATH {
 
@@ -20,8 +21,13 @@ namespace M_MATH {
     template<typename T>
     inline T MeshVolume(std::vector<cv::Point3_<T>> const& vertices, std::vector<cv::Point3i> const& triangle_v_idx) {
         auto volume = T{};
-        for (auto & t : triangle_v_idx)
+        auto N = triangle_v_idx.size();
+        cv::Point3i t;
+#pragma omp parallel for reduction(+:volume) private(t)
+        for (auto i = 0; i < N; i++) {
+            t = triangle_v_idx[i];
             volume += SignedVolumeOfTriangle(vertices[t.x], vertices[t.y], vertices[t.z]);
+        }
         return cv::abs(volume);
     }
 
@@ -37,8 +43,13 @@ namespace M_MATH {
     template<typename T>
     inline T MeshSurface(std::vector<cv::Point3_<T>> const& vertices, std::vector<cv::Point3i> const& triangle_v_idx) {
         auto area = T{};
-        for (auto & t : triangle_v_idx)
+        auto N = triangle_v_idx.size();
+        cv::Point3i t;
+#pragma omp parallel for reduction(+:area) private(t)
+        for (auto i = 0; i < N; i++) {
+            t = triangle_v_idx[i];
             area += AreaOfTriangle(vertices[t.x], vertices[t.y], vertices[t.z]);
+        }
         return area;
     }
 
@@ -69,12 +80,17 @@ namespace M_MATH {
                         cv::Point3_<T> const& plane_center,
                         cv::Point3_<T> const& plane_normal) {
         auto volume = T{};
-        for (auto & t : triangle_v_idx)
+        auto N = triangle_v_idx.size();
+        cv::Point3i t;
+#pragma omp parallel for reduction(+:volume) private(t)
+        for (auto i = 0; i < N; i++) {
+            t = triangle_v_idx[i];
             volume += TriangularPrismVolume(vertices[t.x],
                                             vertices[t.y],
                                             vertices[t.z],
                                             plane_center,
                                             plane_normal);
+        }
         return cv::abs(volume);
     }
 }

@@ -7,6 +7,7 @@
 
 #include <opencv2/core.hpp>
 #include <open3d/Open3D.h>
+#include <omp.h>
 
 namespace M_MATH {
     class TriangleMesh {

@@ -47,11 +47,11 @@ public:
     enum TimeFormat{ NANOSECONDS, MICROSECONDS, MILLISECONDS, SECONDS };
 
 public:
-    StopWatch(): name(), log(std::cout), fmt(NANOSECONDS) {}
+    StopWatch(): name(), log(std::cout), fmt_(NANOSECONDS) {}
     explicit StopWatch(std::string n, TimeFormat fmt, std::ostream& os = std::cout)
         : name(std::move(n)),
           log(os),
-          fmt(fmt) { }
+          fmt_(fmt) { }
 
     void start() {
         start_time = std::chrono::high_resolution_clock::now();
@@ -72,14 +72,14 @@ public:
     void stop(std::string const& n, TimeFormat _fmt) {
         auto duration = std::chrono::high_resolution_clock::now() - start_time;
         auto ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
-        fmt = _fmt;
+        fmt_ = _fmt;
         log << n << ": " << get_ticks_str(ns_count) << '\n';
     }
 
     void stop(std::string const& n, TimeFormat _fmt, std::ostream& os) {
         auto duration = std::chrono::high_resolution_clock::now() - start_time;
         auto ns_count = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
-        fmt = _fmt;
+        fmt_ = _fmt;
         os << n << ": " << get_ticks_str(ns_count) << '\n';
     }
 
@@ -88,11 +88,11 @@ private:
     std::ostream &log;
     typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_pt;
     time_pt start_time;
-    TimeFormat fmt;
+    TimeFormat fmt_;
 
     std::string get_ticks_str(long long ns_count) {
         std::stringstream buffer;
-        switch(fmt) {
+        switch(fmt_) {
             case TimeFormat::NANOSECONDS: {
                 buffer << ns_count << " ns";
                 break;
