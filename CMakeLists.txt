@@ -10,8 +10,8 @@ endif()
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(M_MATH_TEST      "Build tests" ON)
-option(M_MATH_BENCH     "Build benchmarks" ON)
+option(M_MATH_TEST      "Build tests" OFF)
+option(M_MATH_BENCH     "Build benchmarks" OFF)
 option(M_MATH_STATIC    "Builds a static library instead of a shared one" OFF)
 option(M_MATH_SANITIZE  "Adds sanitive flags" OFF)
 
@@ -31,13 +31,13 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules" ${CMAKE_MODULE_PATH})
 
 find_package(Threads REQUIRED)
 
-find_package(GSL REQUIRED)
+#find_package(GSL REQUIRED)
 
-find_package(FFTW REQUIRED)
-include_directories(${FFTW_INCLUDE_DIRS})
+#find_package(FFTW REQUIRED)
+#include_directories(${FFTW_INCLUDE_DIRS})
 
-find_package(CGAL REQUIRED)
-set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
+#find_package(CGAL REQUIRED)
+#set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})

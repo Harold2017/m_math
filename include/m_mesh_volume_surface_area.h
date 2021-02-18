@@ -85,6 +85,9 @@ namespace M_MATH {
 #pragma omp parallel for reduction(+:volume) private(t)
         for (auto i = 0; i < N; i++) {
             t = triangle_v_idx[i];
+            // TODO: split mesh first
+            if (vertices[t.x].z < plane_center.z || vertices[t.y].z < plane_center.z || vertices[t.z].z < plane_center.z)
+                continue;
             volume += TriangularPrismVolume(vertices[t.x],
                                             vertices[t.y],
                                             vertices[t.z],
