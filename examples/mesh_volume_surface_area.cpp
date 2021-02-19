@@ -5,6 +5,7 @@
 #include <iostream>
 #include "m_mesh.h"
 #include "m_mesh_volume_surface_area.h"
+#include "m_mesh_split.h"
 #include "stopwatch.h"
 
 using namespace M_MATH;
@@ -51,15 +52,29 @@ int main(int argc, char* argv[]) {
         mesh->RemoveDuplicatedTriangles();
     }
 
+    open3d::geometry::TriangleMesh l_mesh, r_mesh;
+    auto plane_center = cv::Point3d(0, 0, mesh->GetMaxBound().z() * 0.2);
+    auto plane_normal = cv::Point3d(0, 0, 1);
+    plane_normal = plane_normal / cv::norm(plane_normal);
+    {
+        TIME_BLOCK("- split mesh: ");
+        M_MATH::MeshSplit(*mesh, plane_center, plane_normal, l_mesh, r_mesh);
+    }
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> p_l_mesh;
+    p_l_mesh.reset(&l_mesh);
+    printf("left mesh vertices size: %llu, triangles size: %llu\n", p_l_mesh->vertices_.size(), p_l_mesh->triangles_.size());
+    open3d::visualization::DrawGeometries({ p_l_mesh }, "left mesh", 1920, 1080);
+
     std::vector<cv::Point3d> vert;
     std::vector<cv::Point3i> tri;
-    vert.reserve(mesh->vertices_.size());
-    tri.reserve(mesh->vertices_.size());
+    vert.reserve(p_l_mesh->vertices_.size());
+    tri.reserve(p_l_mesh->vertices_.size());
     {
         TIME_BLOCK("- vert/tri copy: ");
-        for (auto const& v : mesh->vertices_)
+        for (auto const& v : p_l_mesh->vertices_)
             vert.emplace_back(v.x(), v.y(), v.z());
-        for (auto const& t : mesh->triangles_)
+        for (auto const& t : p_l_mesh->triangles_)
             tri.emplace_back(t.x(), t.y(), t.z());
     }
 
@@ -67,21 +82,7 @@ int main(int argc, char* argv[]) {
         TIME_BLOCK("- volume/surface calculation");
         std::cout << "mesh volume: " << MeshVolume(vert, tri) << std::endl;
         std::cout << "mesh surface: " << MeshSurface(vert, tri) << std::endl;
-
-        if (argc > 2) {
-            auto height = std::stod(argv[2]);
-            std::cout << "mesh height threshold: " << height << std::endl;
-            std::cout << "mesh volume against plane: " << MeshVolume(vert, tri, { 0, 0, height }, { 0, 0, 1 }) << std::endl;
-        }
-        else {
-            auto minmax = std::minmax_element(mesh->vertices_.begin(), mesh->vertices_.end(),
-                [](Eigen::Vector3d const& v1, Eigen::Vector3d const& v2) {
-                    return v1.z() < v2.z();
-                });
-            std::cout << "mesh vertex zmin: " << minmax.first->z() << '\n'
-                << "mesh vertex zmax: " << minmax.second->z() << std::endl;
-            std::cout << "mesh volume against plane: " << MeshVolume(vert, tri, { 0, 0, minmax.first->z() }, { 0, 0, 1 }) << std::endl;
-        }
+        std::cout << "mesh volume against plane: " << MeshVolume(vert, tri, plane_center, plane_normal) << std::endl;
     }
     
     return 0;

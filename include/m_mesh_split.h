@@ -19,8 +19,8 @@ namespace M_MATH {
 
 	// https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
 	bool BoundPlaneIntersect(open3d::geometry::OrientedBoundingBox const& bound,
-							 Eigen::Vector3d const& plane_center,
-							 Eigen::Vector3d const& plane_normal) {
+		Eigen::Vector3d const& plane_center,
+		Eigen::Vector3d const& plane_normal) {
 		auto bound_center = bound.GetCenter();  // AABB center
 		auto bound_extents = bound.GetMaxBound() - bound_center;  // positive extents
 		// Compute the projection interval radius of b onto L(t) = b.c + t * p.n
@@ -32,11 +32,11 @@ namespace M_MATH {
 	}
 
 	bool LinePlaneIntersect(Eigen::Vector3d const& p0,
-							Eigen::Vector3d const& p1,
-							Eigen::Vector3d const& plane_center,
-							Eigen::Vector3d const& plane_normal,
-							Eigen::Vector3d & intersect_point,
-							double epsilon = 1e-6) {  //std::numeric_limits<double>::epsilon()
+		Eigen::Vector3d const& p1,
+		Eigen::Vector3d const& plane_center,
+		Eigen::Vector3d const& plane_normal,
+		Eigen::Vector3d& intersect_point,
+		double epsilon = 1e-6) {  //std::numeric_limits<double>::epsilon()
 		auto line_dir = (p1 - p0).normalized();
 		auto d = plane_normal.dot(line_dir);
 		if (std::abs(d) < epsilon)
@@ -57,18 +57,18 @@ namespace M_MATH {
 	 *          | i1
 	 */
 	bool TrianglePlaneIntersect(std::vector<Eigen::Vector3d> const& vertices,
-								std::vector<Eigen::Vector3i> const& triangles,
-								size_t triangle_idx,
-								Eigen::Vector3d const& plane_center,
-								Eigen::Vector3d const& plane_normal,
-								TmpMesh& l_tmp_mesh,
-								TmpMesh& r_tmp_mesh) {
+		std::vector<Eigen::Vector3i> const& triangles,
+		size_t triangle_idx,
+		Eigen::Vector3d const& plane_center,
+		Eigen::Vector3d const& plane_normal,
+		TmpMesh& l_tmp_mesh,
+		TmpMesh& r_tmp_mesh) {
 		auto triangle = triangles[triangle_idx];
 
 		auto is_triangle_vertices_in_mesh = [](Eigen::Vector3i triangle, TmpMesh const& mesh) {
-				return std::array<bool, 3>{mesh.vertices_idx.find(triangle.x()) != mesh.vertices_idx.end(),
-										   mesh.vertices_idx.find(triangle.y()) != mesh.vertices_idx.end(),
-										   mesh.vertices_idx.find(triangle.z()) != mesh.vertices_idx.end()};
+			return std::array<bool, 3>{mesh.vertices_idx.find(triangle.x()) != mesh.vertices_idx.end(),
+				mesh.vertices_idx.find(triangle.y()) != mesh.vertices_idx.end(),
+				mesh.vertices_idx.find(triangle.z()) != mesh.vertices_idx.end()};
 		};
 
 		// triangle vertices all in one side mesh
@@ -123,11 +123,11 @@ namespace M_MATH {
 		return true;
 	}
 
-	bool MeshSplit(open3d::geometry::TriangleMesh const& mesh, 
-				   cv::Point3d const& plane_center,
-				   cv::Point3d const& plane_normal,
-				   open3d::geometry::TriangleMesh & l_mesh,
-				   open3d::geometry::TriangleMesh & r_mesh) {
+	bool MeshSplit(open3d::geometry::TriangleMesh const& mesh,
+		cv::Point3d const& plane_center,
+		cv::Point3d const& plane_normal,
+		open3d::geometry::TriangleMesh& l_mesh,
+		open3d::geometry::TriangleMesh& r_mesh) {
 		auto pc = Eigen::Vector3d(plane_center.x, plane_center.y, plane_center.z);
 		auto pn = Eigen::Vector3d(plane_normal.x, plane_normal.y, plane_normal.z);
 		// 1. check whether bounding box intersect
@@ -157,7 +157,7 @@ namespace M_MATH {
 		// 3. seperate triangles and cut tirangles which intersected with plane
 		auto& triangles = mesh.triangles_;
 		auto M = triangles.size();
-		for (auto i = 0; i < M; i++) 
+		for (auto i = 0; i < M; i++)
 			TrianglePlaneIntersect(vertices, triangles, i, pc, pn, l_tmp_mesh, r_tmp_mesh);
 
 		// 4. assign result to l_mesh, r_mesh
