@@ -93,6 +93,25 @@ namespace M_MATH {
 		int v2 = v0 - 1;
 		if (v2 == -1) v2 = 2;
 
+		/*
+		// add all intersected triangles into l_mesh
+		if (bls[v0]) {
+                  auto Nl = l_tmp_mesh.vertices.size();
+                  l_tmp_mesh.vertices.push_back(vertices[triangle(v1)]);
+                  l_tmp_mesh.vertices.push_back(vertices[triangle(v2)]);
+			l_tmp_mesh.triangles.push_back(
+                Eigen::Vector3i(l_tmp_mesh.vertices_idx[triangle(v0)], Nl, Nl + 1));  
+		} else if (bls[v1] && bls[v2]) {
+                  auto Nl = l_tmp_mesh.vertices.size();
+                  l_tmp_mesh.vertices.push_back(vertices[triangle(v0)]);
+                  l_tmp_mesh.triangles.push_back(Eigen::Vector3i(
+                      l_tmp_mesh.vertices_idx[triangle(v1)],
+                      l_tmp_mesh.vertices_idx[triangle(v2)], Nl));  
+		}
+        */
+			
+
+        ///*
 		// get insert points
 		Eigen::Vector3d i0, i1;
 		LinePlaneIntersect(vertices[triangle(v0)], vertices[triangle(v1)], plane_center, plane_normal, i0);
@@ -119,6 +138,7 @@ namespace M_MATH {
 		else {
 			r_tmp_mesh.triangles.push_back(Eigen::Vector3i(r_tmp_mesh.vertices_idx[triangle(v2)], Nr + 1, Nr));
 		}
+        //*/
 
 		return true;
 	}
