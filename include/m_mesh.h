@@ -28,7 +28,7 @@ namespace M_MATH {
         static std::shared_ptr<open3d::geometry::TriangleMesh> LoadMesh(std::string const& filename,
                                                                         bool print_progress = false);
 
-    private:
+    //private:
         static std::shared_ptr<open3d::geometry::PointCloud> ToPointCloud(std::vector<cv::Point3f> const& pts);
         static std::shared_ptr<open3d::geometry::TriangleMesh> GenMesh(std::shared_ptr<open3d::geometry::PointCloud> const& pcd, MeshType type);
     };
