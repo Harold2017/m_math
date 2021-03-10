@@ -29,9 +29,9 @@ int main(int argc, char* argv[]) {
 	// by HM
 	open3d::geometry::TriangleMesh l_mesh, r_mesh;
 	auto diff = mesh->GetMaxBound() - mesh->GetMinBound();
-	auto plane_center = cv::Point3d(diff.x() / 2, diff.y() / 2, diff.z() / 2);
-	auto plane_normal = cv::Point3d(1, 1, 1);
-	plane_normal = plane_normal / cv::norm(plane_normal);
+	auto plane_center = Eigen::Vector3d(diff.x() / 2, diff.y() / 2, diff.z() / 2);
+	auto plane_normal = Eigen::Vector3d(1, 1, 1);
+	plane_normal.normalize();
 	M_MATH::MeshCut(*mesh, plane_center, plane_normal, l_mesh, r_mesh);
 	PaintMesh(l_mesh, Eigen::Vector3d(0.0, 1.0, 0.0));
 	PaintMesh(r_mesh, Eigen::Vector3d(1.0, 0.0, 0.0));

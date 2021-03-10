@@ -5,7 +5,6 @@
 #ifndef M_MATH_M_MESH_SPLIT_H
 #define M_MATH_M_MESH_SPLIT_H
 
-#include <opencv2/core.hpp>
 #include <open3d/Open3D.h>
 #include <unordered_map>
 #include <omp.h>
@@ -153,14 +152,12 @@ namespace M_MATH {
 	 * @return successfully cut or not
 	*/
 	bool MeshCut(open3d::geometry::TriangleMesh const& mesh,
-		cv::Point3d const& plane_center,
-		cv::Point3d const& plane_normal,
+		Eigen::Vector3d const& plane_center,
+		Eigen::Vector3d const& plane_normal,
 		open3d::geometry::TriangleMesh& l_mesh,
 		open3d::geometry::TriangleMesh& r_mesh) {
-		auto pc = Eigen::Vector3d(plane_center.x, plane_center.y, plane_center.z);
-		auto pn = Eigen::Vector3d(plane_normal.x, plane_normal.y, plane_normal.z);
 		// 1. check whether bounding box intersect
-		if (!BoundPlaneIntersect(mesh.GetOrientedBoundingBox(), pc, pn))
+		if (!BoundPlaneIntersect(mesh.GetOrientedBoundingBox(), plane_center, plane_normal))
 			return false;
 
 		TmpMesh l_tmp_mesh, r_tmp_mesh;
@@ -168,8 +165,12 @@ namespace M_MATH {
 		// 2. seperate vertices
 		auto& vertices = mesh.vertices_;
 		auto N = vertices.size();
+		l_tmp_mesh.vertices.reserve(N);
+		l_tmp_mesh.vertices_idx.reserve(N);
+		r_tmp_mesh.vertices.reserve(N);
+		r_tmp_mesh.vertices_idx.reserve(N);
 		for (size_t i = 0; i < N; i++) {
-			if ((vertices[i] - pc).dot(pn) >= 0) {
+			if ((vertices[i] - plane_center).dot(plane_normal) >= 0) {
 				l_tmp_mesh.vertices.push_back(vertices[i]);
 				l_tmp_mesh.vertices_idx.insert({ i, l_tmp_mesh.vertices.size() - 1 });
 			}
@@ -186,8 +187,15 @@ namespace M_MATH {
 		// 3. seperate triangles and cut tirangles which intersected with plane
 		auto& triangles = mesh.triangles_;
 		auto M = triangles.size();
+		l_tmp_mesh.triangles.reserve(M);
+		r_tmp_mesh.triangles.reserve(M);
 		for (auto i = 0; i < M; i++)
-			TrianglePlaneIntersect(vertices, triangles, i, pc, pn, l_tmp_mesh, r_tmp_mesh);
+			TrianglePlaneIntersect(vertices, triangles, i, plane_center, plane_normal, l_tmp_mesh, r_tmp_mesh);
+
+		l_tmp_mesh.vertices.shrink_to_fit();
+		l_tmp_mesh.triangles.shrink_to_fit();
+		r_tmp_mesh.vertices.shrink_to_fit();
+		r_tmp_mesh.triangles.shrink_to_fit();
 
 		// 4. assign result to l_mesh, r_mesh
 		l_mesh = open3d::geometry::TriangleMesh(l_tmp_mesh.vertices, l_tmp_mesh.triangles);
