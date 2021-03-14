@@ -7,6 +7,8 @@
 
 #include <open3d/Open3D.h>
 #include <unordered_map>
+#include <unordered_set>
+#include <queue>
 #include <omp.h>
 
 namespace M_MATH {
@@ -219,23 +221,69 @@ namespace M_MATH {
 	 * @return cluster of triangle indices
 	*/
 	std::unordered_map<size_t, std::vector<size_t>> MeshSplit(open3d::geometry::TriangleMesh const& mesh, size_t cluster_min_size = 10) {
-		auto clusters = mesh.ClusterConnectedTriangles();
-		auto cluster_triangles = std::get<1>(clusters);
+		std::vector<size_t> triangle_clusters(mesh.triangles_.size(), -1);  // -1 as unclustered
+		std::vector<size_t> num_triangles;
+
+		// compute triangle adjacency
+		auto edges_to_triangles = mesh.GetEdgeToTrianglesMap();  // edge to triangle idxs: std::unordered_map<Eigen::Vector2i, std::vector<int>>
+		std::vector<std::unordered_set<int>> adjacency_list(mesh.triangles_.size());  // triangle idx to its adjacent triangles
+#pragma omp parallel for schedule(static)
+		for (auto tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
+			const auto& triangle = mesh.triangles_[tidx];
+			for (auto tri : edges_to_triangles[mesh.GetOrderedEdge(triangle(0), triangle(1))])
+				adjacency_list[tidx].insert(tri);
+			for (auto tri : edges_to_triangles[mesh.GetOrderedEdge(triangle(0), triangle(2))])
+				adjacency_list[tidx].insert(tri);
+			for (auto tri : edges_to_triangles[mesh.GetOrderedEdge(triangle(1), triangle(2))])
+				adjacency_list[tidx].insert(tri);
+		}
+
+		// cluster triangles
+		size_t cluster_idx = 0;
+		for (auto tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
+			// clustered
+			if (triangle_clusters[tidx] != -1) {
+				continue;
+			}
+
+			// unclustered
+			std::queue<size_t> triangle_queue;
+			size_t cluster_n_triangles = 0;
+
+			triangle_queue.push(tidx);
+			triangle_clusters[tidx] = cluster_idx;
+			while (!triangle_queue.empty()) {
+				auto cluster_tidx = triangle_queue.front();
+				triangle_queue.pop();
+
+				cluster_n_triangles++;
+
+				for (auto tri : adjacency_list[cluster_tidx]) {
+					if (triangle_clusters[tri] == -1) {
+						triangle_queue.push(tri);
+						triangle_clusters[tri] = cluster_idx;
+					}
+				}
+			}
+
+			num_triangles.push_back(cluster_n_triangles);
+			cluster_idx++;
+		}
+
+		// cluster idx to triangle idxs
 		std::unordered_map<size_t, std::vector<size_t>> cluster_idx_triangles;
 		// valid cluster at least has 10 triangles
-		for (auto i = 0; i < cluster_triangles.size(); i++) {
-			if (cluster_triangles[i] >= cluster_min_size) {
+		for (auto i = 0; i < num_triangles.size(); i++) {
+			if (num_triangles[i] >= cluster_min_size) {
 				std::vector<size_t> v;
-				v.reserve(cluster_triangles[i]);
+				v.reserve(num_triangles[i]);
 				auto p = cluster_idx_triangles.insert({ i, v });
 			}
 		}
 
-		auto triangle_idx_cluster_idx = std::get<0>(clusters);
-		for (auto i = 0; i < triangle_idx_cluster_idx.size(); i++) {
-			if (cluster_idx_triangles.find(triangle_idx_cluster_idx[i]) !=
-				cluster_idx_triangles.end()) {
-				cluster_idx_triangles[triangle_idx_cluster_idx[i]].emplace_back(i);
+		for (auto i = 0; i < triangle_clusters.size(); i++) {
+			if (cluster_idx_triangles.find(triangle_clusters[i]) != cluster_idx_triangles.end()) {
+				cluster_idx_triangles[triangle_clusters[i]].emplace_back(i);
 			}
 		}
 

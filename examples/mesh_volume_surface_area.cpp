@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
     printf("left mesh vertices size: %llu, triangles size: %llu\n", l_mesh.vertices_.size(), l_mesh.triangles_.size());
     auto p_l_mesh = std::make_shared<open3d::geometry::TriangleMesh>(l_mesh);
-    open3d::visualization::DrawGeometries({ p_l_mesh }, "left mesh", 1920, 1080);
+    //open3d::visualization::DrawGeometries({ p_l_mesh }, "left mesh", 1920, 1080);
 
     std::cout << std::fixed;
     std::cout << std::setprecision(3);
