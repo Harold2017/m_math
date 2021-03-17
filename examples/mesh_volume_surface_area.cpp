@@ -19,8 +19,8 @@ int main(int argc, char* argv[]) {
         TIME_BLOCK("- load mesh: ");
         mesh = M_MATH::TriangleMesh::LoadMesh(argv[1]);
         std::cout //<< "volume: " << mesh->GetVolume() << '\n'
-            << "surface area: " << mesh->GetSurfaceArea()
-            << std::endl;
+                  << "surface area: " << mesh->GetSurfaceArea()
+                  << std::endl;
         mesh->RemoveDuplicatedVertices();
         mesh->RemoveDuplicatedTriangles();
     }
@@ -36,19 +36,27 @@ int main(int argc, char* argv[]) {
         M_MATH::MeshCut(*mesh, plane_center, plane_normal, l_mesh, r_mesh);
     }
 
-    printf("left mesh vertices size: %llu, triangles size: %llu\n", l_mesh.vertices_.size(), l_mesh.triangles_.size());
-    auto p_l_mesh = std::make_shared<open3d::geometry::TriangleMesh>(l_mesh);
+    printf("l_mesh vertices size: %llu, triangles size: %llu\n", l_mesh.vertices_.size(), l_mesh.triangles_.size());
+    printf("r_mesh vertices size: %llu, triangles size: %llu\n", r_mesh.vertices_.size(), r_mesh.triangles_.size());
+    //auto p_l_mesh = std::make_shared<open3d::geometry::TriangleMesh>(l_mesh);
     //open3d::visualization::DrawGeometries({ p_l_mesh }, "left mesh", 1920, 1080);
 
     std::cout << std::fixed;
     std::cout << std::setprecision(3);
 
+    /*
     {
-        TIME_BLOCK("- volume/surface calculation");
-        std::cout << "mesh volume: " << MeshVolume(l_mesh.vertices_, l_mesh.triangles_) << std::endl;
-        std::cout << "mesh surface: " << MeshSurface(l_mesh.vertices_, l_mesh.triangles_) * 1e6 << std::endl;
-        std::cout << "mesh volume against plane: " << MeshVolume(l_mesh.vertices_, l_mesh.triangles_, plane_center, plane_normal) * 1e9 << std::endl;
+        TIME_BLOCK("- l_mesh volume/surface calculation");
+        std::cout << "l_mesh surface: " << MeshSurface(l_mesh.vertices_, l_mesh.triangles_) * 1e6 << std::endl;
+        std::cout << "l_mesh volume against plane: " << MeshVolume(l_mesh.vertices_, l_mesh.triangles_, plane_center, plane_normal) * 1e9 << std::endl;
     }
+
+    {
+        TIME_BLOCK("- r_mesh volume/surface calculation");
+        std::cout << "r_mesh surface: " << MeshSurface(r_mesh.vertices_, r_mesh.triangles_) * 1e6 << std::endl;
+        std::cout << "r_mesh volume against plane: " << MeshVolume(r_mesh.vertices_, r_mesh.triangles_, plane_center, plane_normal) * 1e9 << std::endl;
+    }
+    */
 
     /*
     {
@@ -60,24 +68,25 @@ int main(int argc, char* argv[]) {
     }
     */
 
+    //*
     std::unordered_map<size_t, std::vector<size_t>> l_triangle_clusters, r_triangle_clusters;
 
     {
-        TIME_BLOCK("- split l_mesh");
+        TIME_BLOCK("- split l_mesh triangles");
 
-        l_triangle_clusters = MeshSplit(l_mesh);
-        std::cout << "l_mesh cluster numbers: " << l_triangle_clusters.size() << std::endl;
+        l_triangle_clusters = MeshTrianglesSplit(l_mesh);
+        std::cout << "l_mesh triangles cluster numbers: " << l_triangle_clusters.size() << std::endl;
     }
 
     {
-        TIME_BLOCK("- split r_mesh");
+        TIME_BLOCK("- split r_mesh triangles");
 
-        r_triangle_clusters = MeshSplit(r_mesh);
-        std::cout << "r_mesh cluster numbers: " << r_triangle_clusters.size() << std::endl;
+        r_triangle_clusters = MeshTrianglesSplit(r_mesh);
+        std::cout << "r_mesh triangles cluster numbers: " << r_triangle_clusters.size() << std::endl;
     }
 
     {
-        TIME_BLOCK("- sub-mesh volume/surface calculation");
+        TIME_BLOCK("- sub-mesh volume/surface calculation by triangles");
 
         {
             TIME_BLOCK("- l_sub-mesh volume/surface calculation");
@@ -109,6 +118,48 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+
+
+    std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>> l_mesh_clusters, r_mesh_clusters;
+
+    {
+        TIME_BLOCK("- split l_mesh");
+
+        l_mesh_clusters = MeshSplit(l_mesh);
+        std::cout << "l_mesh cluster numbers: " << l_mesh_clusters.size() << std::endl;
+    }
+
+    {
+        TIME_BLOCK("- split r_mesh");
+
+        r_mesh_clusters = MeshSplit(r_mesh);
+        std::cout << "r_mesh cluster numbers: " << r_mesh_clusters.size() << std::endl;
+    }
+
+    {
+        TIME_BLOCK("- sub-mesh volume/surface calculation by meshes");
+
+        {
+            TIME_BLOCK("- l_sub-mesh volume/surface calculation");
+            std::cout << "\nl_mesh: \n";
+            for (auto const& mesh : l_mesh_clusters) {
+                std::cout << "cluster " << mesh.first << ": " << '\n';
+                std::cout << "\tsurface: " << MeshSurface(mesh.second->vertices_, mesh.second->triangles_) << '\n';
+                std::cout << "\tvolume: " << MeshVolume(mesh.second->vertices_, mesh.second->triangles_, plane_center, plane_normal) << "\n\n";
+            }
+        }
+
+        {
+            TIME_BLOCK("- r_sub-mesh volume/surface calculation");
+            std::cout << "\nr_mesh: \n";
+            for (auto const& mesh : r_mesh_clusters) {
+                std::cout << "cluster " << mesh.first << ": " << '\n';
+                std::cout << "\tsurface: " << MeshSurface(mesh.second->vertices_, mesh.second->triangles_) << '\n';
+                std::cout << "\tvolume: " << MeshVolume(mesh.second->vertices_, mesh.second->triangles_, plane_center, plane_normal) << "\n\n";
+            }
+        }
+    }
+    //*/
     
     return 0;
 }
