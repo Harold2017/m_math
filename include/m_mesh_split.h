@@ -344,6 +344,61 @@ namespace M_MATH {
 		}
 		return res;
 	}
+
+	/**
+	 * @brief crop mesh with input bounding box
+	 * @param mesh 
+	 * @param bbox 
+	 * @param get_outside if true, return mesh outside the bbox, otherwise, return mesh inside the bbox
+	 * @return cropped mesh
+	*/
+	std::shared_ptr<open3d::geometry::TriangleMesh> MeshCrop(open3d::geometry::TriangleMesh const& mesh, open3d::geometry::OrientedBoundingBox const& bbox, bool get_outside = true) {
+		if (bbox.IsEmpty())
+			throw;
+		if (!get_outside)
+			return mesh.Crop(bbox);
+		auto const& points = mesh.vertices_;
+		std::vector<size_t> indices;
+		indices.reserve(points.size());
+		Eigen::Vector3d dx(1, 0, 0);
+		Eigen::Vector3d dy(0, 1, 0);
+		Eigen::Vector3d dz(0, 0, 1);
+		for (size_t idx = 0; idx < points.size(); idx++) {
+			Eigen::Vector3d d = points[idx] - bbox.center_;
+			if (std::abs(d.dot(dx)) > bbox.extent_(0) / 2 ||
+				std::abs(d.dot(dy)) > bbox.extent_(1) / 2 ||
+				std::abs(d.dot(dz)) > bbox.extent_(2) / 2) {
+				indices.push_back(idx);
+			}
+		}
+		return mesh.SelectByIndex(indices);
+	}
+
+	/**
+	 * @brief crop mesh with input bounding box
+	 * @param mesh
+	 * @param bbox
+	 * @param get_outside if true, return mesh outside the bbox, otherwise, return mesh inside the bbox
+	 * @return cropped mesh
+	*/
+	std::shared_ptr<open3d::geometry::TriangleMesh> MeshCrop(open3d::geometry::TriangleMesh const& mesh, open3d::geometry::AxisAlignedBoundingBox const& bbox, bool get_outside = true) {
+		if (bbox.IsEmpty())
+			throw;
+		if (!get_outside)
+			return mesh.Crop(bbox);
+		auto const& points = mesh.vertices_;
+		std::vector<size_t> indices;
+		indices.reserve(points.size());
+		for (size_t idx = 0; idx < points.size(); idx++) {
+			const auto& point = points[idx];
+			if (point(0) < bbox.min_bound_(0) || point(0) > bbox.max_bound_(0) ||
+				point(1) < bbox.min_bound_(1) || point(1) > bbox.max_bound_(1) ||
+				point(2) < bbox.min_bound_(2) || point(2) > bbox.max_bound_(2)) {
+				indices.push_back(idx);
+			}
+		}
+		return mesh.SelectByIndex(indices);
+	}
 }
 
 #endif M_MATH_M_MESH_SPLIT_H
