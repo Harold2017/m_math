@@ -289,7 +289,39 @@ namespace M_MATH {
 			if (num_triangles[i] >= cluster_min_size) {
 				std::vector<size_t> v;
 				v.reserve(num_triangles[i]);
-				auto p = cluster_idx_triangles.insert({ i, v });
+				cluster_idx_triangles.insert({ i, v });
+			}
+		}
+
+		for (auto i = 0; i < triangle_clusters.size(); i++) {
+			if (cluster_idx_triangles.find(triangle_clusters[i]) != cluster_idx_triangles.end()) {
+				cluster_idx_triangles[triangle_clusters[i]].emplace_back(i);
+			}
+		}
+
+		return cluster_idx_triangles;
+	}
+
+	/**
+	 * @brief split mesh triangles into clusters
+	 * @param mesh 
+	 * @param cluster_min_area 
+	 * @return 
+	*/
+	std::unordered_map<size_t, std::vector<size_t>> MeshTrianglesSplit(open3d::geometry::TriangleMesh const& mesh, double cluster_min_area) {
+		auto triangle_clusters_nums_areas = mesh.ClusterConnectedTriangles();
+		auto const& triangle_clusters = std::get<0>(triangle_clusters_nums_areas);
+		auto const& num_triangles = std::get<1>(triangle_clusters_nums_areas);
+		auto const& areas = std::get<2>(triangle_clusters_nums_areas);
+
+		// cluster idx to triangle idxs
+		std::unordered_map<size_t, std::vector<size_t>> cluster_idx_triangles;
+		// valid cluster at least has area of cluster_min_area
+		for (auto i = 0; i < num_triangles.size(); i++) {
+			if (areas[i] >= cluster_min_area) {
+				std::vector<size_t> v;
+				v.reserve(num_triangles[i]);
+				cluster_idx_triangles.insert({ i, v });
 			}
 		}
 
@@ -320,7 +352,51 @@ namespace M_MATH {
 			if (num_triangles[i] >= cluster_min_size) {
 				std::unordered_set<size_t> v;
 				v.reserve(num_triangles[i] * 3);
-				auto p = cluster_idx_vertices.insert({ i, v });
+				cluster_idx_vertices.insert({ i, v });
+			}
+		}
+
+		for (auto i = 0; i < triangle_clusters.size(); i++) {
+			if (cluster_idx_vertices.find(triangle_clusters[i]) != cluster_idx_vertices.end()) {
+				cluster_idx_vertices[triangle_clusters[i]].insert(mesh.triangles_[i](0));
+				cluster_idx_vertices[triangle_clusters[i]].insert(mesh.triangles_[i](1));
+				cluster_idx_vertices[triangle_clusters[i]].insert(mesh.triangles_[i](2));
+			}
+		}
+
+		std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>> res;
+
+		std::vector<size_t> vertices;
+		for (auto const& cluster : cluster_idx_vertices) {
+			vertices.reserve(cluster.second.size());
+			for (auto const& vertex_idx : cluster.second)
+				vertices.push_back(vertex_idx);
+			res[cluster.first] = mesh.SelectByIndex(vertices);
+			vertices.clear();
+		}
+		return res;
+	}
+
+	/**
+	 * @brief split mesh into sub-mesh clusters
+	 * @param mesh 
+	 * @param cluster_min_area 
+	 * @return 
+	*/
+	std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>> MeshSplit(open3d::geometry::TriangleMesh const& mesh, double cluster_min_area) {
+		auto triangle_clusters_nums_areas = mesh.ClusterConnectedTriangles();
+		auto const& triangle_clusters = std::get<0>(triangle_clusters_nums_areas);
+		auto const& num_triangles = std::get<1>(triangle_clusters_nums_areas);
+		auto const& areas = std::get<2>(triangle_clusters_nums_areas);
+
+		// cluster idx to vertices idxs
+		std::unordered_map<size_t, std::unordered_set<size_t>> cluster_idx_vertices;
+		// valid cluster at least has area of cluster_min_area
+		for (auto i = 0; i < num_triangles.size(); i++) {
+			if (areas[i] >= cluster_min_area) {
+				std::unordered_set<size_t> v;
+				v.reserve(num_triangles[i] * 3);
+				cluster_idx_vertices.insert({ i, v });
 			}
 		}
 
