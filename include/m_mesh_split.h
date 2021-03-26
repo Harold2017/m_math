@@ -371,7 +371,7 @@ namespace M_MATH {
 			vertices.reserve(cluster.second.size());
 			for (auto const& vertex_idx : cluster.second)
 				vertices.push_back(vertex_idx);
-			res[cluster.first] = mesh.SelectByIndex(vertices);
+			res[cluster.first] = mesh.SelectByIndex(vertices, false);  // triangles already unique
 			vertices.clear();
 		}
 		return res;
@@ -415,7 +415,7 @@ namespace M_MATH {
 			vertices.reserve(cluster.second.size());
 			for (auto const& vertex_idx : cluster.second)
 				vertices.push_back(vertex_idx);
-			res[cluster.first] = mesh.SelectByIndex(vertices);
+			res[cluster.first] = mesh.SelectByIndex(vertices, false);  // triangles already unique
 			vertices.clear();
 		}
 		return res;
