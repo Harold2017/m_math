@@ -12,22 +12,26 @@
 using namespace M_MATH;
 
 int main(int argc, char* argv[]) {
-    assert(argc > 1);  // argv[1]: mesh_file, argv[2]: z cross section threshold for volume computation
+    assert(argc == 4);  // argv[1]: mesh_file path, argv[2]: z cross section threshold for volume computation, argv[3]: mesh subparts min area size
+    auto mesh_file_path = std::string(argv[1]);
+    auto height = std::stod(argv[2]);
+    auto min_area = std::stod(argv[3]);
+    std::cout << "mesh height threshold: " << height << '\n'
+              << "mesh subparts min area size: " << min_area << '\n'
+              << std::endl;
 
     std::shared_ptr<open3d::geometry::TriangleMesh> mesh;
     {
         TIME_BLOCK("- load mesh: ");
-        mesh = M_MATH::TriangleMesh::LoadMesh(argv[1]);
+        mesh = M_MATH::TriangleMesh::LoadMesh(mesh_file_path);
         std::cout //<< "volume: " << mesh->GetVolume() << '\n'
-                  << "surface area: " << mesh->GetSurfaceArea()
+                  << "surface area: " << mesh->GetSurfaceArea() << '\n'
                   << std::endl;
         mesh->RemoveDuplicatedVertices();
         mesh->RemoveDuplicatedTriangles();
     }
 
     open3d::geometry::TriangleMesh l_mesh, r_mesh;
-    auto height = std::stod(argv[2]);
-    std::cout << "mesh height threshold: " << height << std::endl;
     auto plane_center = Eigen::Vector3d(0, 0, height);
     auto plane_normal = Eigen::Vector3d(0, 0, 1);
     plane_normal.normalize();
@@ -39,7 +43,10 @@ int main(int argc, char* argv[]) {
     printf("l_mesh vertices size: %llu, triangles size: %llu\n", l_mesh.vertices_.size(), l_mesh.triangles_.size());
     printf("r_mesh vertices size: %llu, triangles size: %llu\n", r_mesh.vertices_.size(), r_mesh.triangles_.size());
     //auto p_l_mesh = std::make_shared<open3d::geometry::TriangleMesh>(l_mesh);
-    //open3d::visualization::DrawGeometries({ p_l_mesh }, "left mesh", 1920, 1080);
+    //auto p_r_mesh = std::make_shared<open3d::geometry::TriangleMesh>(r_mesh);
+    //p_l_mesh->PaintUniformColor(Eigen::Vector3d{ 1, 0, 0 });
+    //p_r_mesh->PaintUniformColor(Eigen::Vector3d{ 0, 1, 0 });
+    //open3d::visualization::DrawGeometries({ p_l_mesh, p_r_mesh }, "cutted mesh", 1920, 1080);
 
     std::cout << std::fixed;
     std::cout << std::setprecision(3);
@@ -73,7 +80,7 @@ int main(int argc, char* argv[]) {
     }
     */
 
-    ///*
+    /*
     // triangle clusters
     std::unordered_map<size_t, std::vector<size_t>> l_triangle_clusters, r_triangle_clusters;
 
@@ -124,23 +131,24 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    //*/
+    */
 
 
+    /*
     // mesh clusters
     std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>> l_mesh_clusters, r_mesh_clusters;
 
     {
         TIME_BLOCK("- split l_mesh");
 
-        l_mesh_clusters = MeshSplit(l_mesh);
+        l_mesh_clusters = MeshSplit(l_mesh, min_area);
         std::cout << "l_mesh cluster numbers: " << l_mesh_clusters.size() << std::endl;
     }
 
     {
         TIME_BLOCK("- split r_mesh");
 
-        r_mesh_clusters = MeshSplit(r_mesh);
+        r_mesh_clusters = MeshSplit(r_mesh, min_area);
         std::cout << "r_mesh cluster numbers: " << r_mesh_clusters.size() << std::endl;
     }
 
@@ -167,7 +175,72 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    //*/
+    */
+
+    // mesh clusters 2
+    std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> l_mesh_clusters, r_mesh_clusters;
+
+    {
+        TIME_BLOCK("- split l_mesh");
+
+        l_mesh_clusters = MeshSplit2(l_mesh, min_area);
+        std::cout << "l_mesh cluster numbers: " << l_mesh_clusters.size() << std::endl;
+    }
+
+    {
+        TIME_BLOCK("- split r_mesh");
+
+        r_mesh_clusters = MeshSplit2(r_mesh, min_area);
+        std::cout << "r_mesh cluster numbers: " << r_mesh_clusters.size() << std::endl;
+    }
+
+    /*
+    {
+        TIME_BLOCK("- sub-mesh volume/surface calculation by meshes");
+
+        {
+            TIME_BLOCK("- l_sub-mesh volume/surface calculation");
+            std::cout << "\nl_mesh: \n";
+            for (auto i = 0; i < l_mesh_clusters.size(); ++i) {
+                auto mesh = l_mesh_clusters[i];
+                std::cout << "cluster " << i << ": " << '\n';
+                std::cout << "\tsurface: " << MeshSurface(mesh->vertices_, mesh->triangles_) << '\n';
+                std::cout << "\tvolume: " << MeshVolume(mesh->vertices_, mesh->triangles_, plane_center, plane_normal) << "\n\n";
+            }
+        }
+
+        {
+            TIME_BLOCK("- r_sub-mesh volume/surface calculation");
+            std::cout << "\nr_mesh: \n";
+            for (auto i = 0; i < r_mesh_clusters.size(); ++i) {
+                auto mesh = r_mesh_clusters[i];
+                std::cout << "cluster " << i << ": " << '\n';
+                std::cout << "\tsurface: " << MeshSurface(mesh->vertices_, mesh->triangles_) << '\n';
+                std::cout << "\tvolume: " << MeshVolume(mesh->vertices_, mesh->triangles_, plane_center, plane_normal) << "\n\n";
+            }
+        }
+    }
+    */
+
+    // display subparts
+    std::vector<std::shared_ptr<const open3d::geometry::Geometry>> d_mesh_cluster;
+    // auto color = Eigen::Vector3d::Random().cwiseAbs();
+    open3d::visualization::ColorMapWinter cm;
+    auto Nl = l_mesh_clusters.size();
+    auto Nr = r_mesh_clusters.size();
+    auto N = Nl + Nr;
+    d_mesh_cluster.reserve(N);
+    size_t i = 0;
+    for (; i < Nl; ++i) {
+        l_mesh_clusters[i]->PaintUniformColor(cm.GetColor(double(i) / double(N)));
+        d_mesh_cluster.push_back(l_mesh_clusters[i]);
+    }
+    for (; i < N; ++i) {
+        r_mesh_clusters[i - Nl]->PaintUniformColor(cm.GetColor(double(i) / double(N)));
+        d_mesh_cluster.push_back(r_mesh_clusters[i - Nl]);
+    }
+    open3d::visualization::DrawGeometries(d_mesh_cluster, "l_mesh", 1920, 1080);
+    // TODO: mesh cluster based on triangle edge connectivity is not so good for fractured small parts, need a way to merge them?
     
     return 0;
 }
