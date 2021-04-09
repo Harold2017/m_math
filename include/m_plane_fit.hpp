@@ -24,19 +24,13 @@ namespace M_MATH {
         covariance_matrix = covariance_matrix / (rows - 1);
 
         // center
-        cv::Point3_<T> plane_center;
-        plane_center.x = mean.at<double>(0, 0);
-        plane_center.y = mean.at<double>(0, 1);
-        plane_center.z = mean.at<double>(0, 2);
+        cv::Point3_<T> plane_center(mean.row(0));
 
         cv::Mat eig_val, eig_vec;
         cv::eigen(covariance_matrix, eig_val, eig_vec);
 
         // normal
-        cv::Point3_<T> plane_normal;
-        plane_normal.x = eig_vec.at<double>(2, 0);
-        plane_normal.y = eig_vec.at<double>(2, 1);
-        plane_normal.z = eig_vec.at<double>(2, 2);
+        cv::Point3_<T> plane_normal(eig_vec.row(2));
 
         // curvature
         //auto plane_curvature = eig_val.at<double>(2) / (eig_val.at<double>(0) + eig_val.at<double>(1) + eig_val.at<double>(2));

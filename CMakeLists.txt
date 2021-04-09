@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(M_MATH_TEST      "Build tests" OFF)
-option(M_MATH_BENCH     "Build benchmarks" OFF)
+option(M_MATH_BENCH     "Build benchmarks" ON)
 option(M_MATH_STATIC    "Builds a static library instead of a shared one" OFF)
 option(M_MATH_SANITIZE  "Adds sanitive flags" OFF)
 
@@ -38,6 +38,11 @@ find_package(Threads REQUIRED)
 
 #find_package(CGAL REQUIRED)
 #set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
+
+#Eigen3
+find_path(EIGEN_INCLUDE_DIR NAMES Eigen/CORE)
+message(STATUS "Eigen include dir: ${EIGEN_INCLUDE_DIR}")
+include_directories(${EIGEN_INCLUDE_DIR})
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
