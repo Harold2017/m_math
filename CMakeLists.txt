@@ -40,9 +40,13 @@ find_package(Threads REQUIRED)
 #set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
 #Eigen3
-find_path(EIGEN_INCLUDE_DIR NAMES Eigen/CORE)
-message(STATUS "Eigen include dir: ${EIGEN_INCLUDE_DIR}")
-include_directories(${EIGEN_INCLUDE_DIR})
+if (APPLE)
+    find_package(Eigen3 REQUIRED)
+elseif(WIN32)
+    find_path(EIGEN_INCLUDE_DIR NAMES Eigen/CORE)
+    message(STATUS "Eigen include dir: ${EIGEN_INCLUDE_DIR}")
+    include_directories(${EIGEN_INCLUDE_DIR})
+endif()
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})

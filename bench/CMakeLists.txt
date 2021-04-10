@@ -14,3 +14,8 @@ add_executable(bench_m_math ${bench_src})
 target_link_libraries(bench_m_math
         ${OpenCV_LIBS}
         benchmark::benchmark)
+
+if (APPLE)
+    target_link_libraries(bench_m_math
+            Eigen3::Eigen)
+endif()
