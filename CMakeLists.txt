@@ -9,6 +9,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_BUILD_TYPE Release)
 
 option(M_MATH_TEST      "Build tests" OFF)
 option(M_MATH_BENCH     "Build benchmarks" ON)
@@ -54,6 +55,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(Open3D REQUIRED)
 include_directories(${Open3D_INCLUDE_DIRS})
 
+find_package(OpenMP)
+
 include_directories(
         include
         utils)
@@ -77,6 +80,7 @@ message(STATUS "  Build tests          : ${M_MATH_TEST}")
 message(STATUS "  Build benchmarks     : ${M_MATH_BENCH}")
 message(STATUS "  Sanitize flags       : ${M_MATH_SANITIZE}")
 message(STATUS "  Boost include dirs   : ${Boost_INCLUDE_DIRS}")
+message(STATUS "  OpenMP found         : ${OPENMP_CXX_FOUND}")
 message(STATUS "")
 
 # examples
