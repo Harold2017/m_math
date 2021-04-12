@@ -38,6 +38,29 @@ namespace M_MATH {
         return res;
     }
 
+    // 2D ifft, requires fft shift
+    template<typename Scalar>
+    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>
+    BackwardFFT(Eigen::Matrix<std::complex<Scalar>, Eigen::Dynamic, Eigen::Dynamic> const& mat) {
+        auto rows = mat.rows();
+        auto cols = mat.cols();
+        Eigen::FFT<Scalar> fft;
+        Eigen::Matrix<std::complex<Scalar>, Eigen::Dynamic, Eigen::Dynamic> tmpMat(rows, cols);
+        Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> res(rows, cols);
+        // need apply 1d fft on both rows and cols
+        for (auto i = 0; i < rows; ++i) {
+            Eigen::Matrix<std::complex<Scalar>, Eigen::Dynamic, 1> tmp(cols);
+            fft.inv(tmp, mat.row(i).eval());
+            tmpMat.row(i) = tmp;
+        }
+        for (auto i = 0; i < cols; ++i) {
+            Eigen::Matrix<std::complex<Scalar>, 1, Eigen::Dynamic> tmp(rows);
+            fft.inv(tmp, tmpMat.col(i).eval());
+            res.col(i) = tmp.real();
+        }
+        return res;
+    }
+
     // OMP one is slower according to benchmark result (see bench/fft_bench.cpp)
     template<typename Derived>
     Eigen::Matrix<std::complex<typename Derived::Scalar>, Eigen::Dynamic, Eigen::Dynamic>

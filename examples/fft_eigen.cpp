@@ -15,6 +15,9 @@ int main() {
     auto out = M_MATH::ForwardFFT(in);
     std::cout << out << std::endl;
 
+    auto inv = M_MATH::BackwardFFT(out);
+    std::cout << inv << std::endl;
+
     auto shifted = M_MATH::fftshift(out);
     std::cout << shifted << std::endl;
 
