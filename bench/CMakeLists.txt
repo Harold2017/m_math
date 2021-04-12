@@ -17,7 +17,7 @@ target_link_libraries(bench_m_math
         benchmark::benchmark)
 
 if (OpenMP_CXX_FOUND)
-    target_link_libraries(bench_m_math Eigen3::Eigen OpenMP::OpenMP_CXX)
+    target_link_libraries(bench_m_math OpenMP::OpenMP_CXX)
 endif()
 
 if (APPLE)
