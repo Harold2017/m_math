@@ -43,6 +43,12 @@ BENCHMARK_DEFINE_F(PlaneFitFixture, PFEIGEN_Mask)(benchmark::State& state) {
     }
 }
 
+BENCHMARK_DEFINE_F(PlaneFitFixture, PFEIGENSVD_Mask)(benchmark::State& state) {
+    for (auto _ : state) {
+        M_MATH::PlaneFitSVD(pts1);
+    }
+}
+
 BENCHMARK_REGISTER_F(PlaneFitFixture, PFCV_Mask)
     -> Arg(256)
     -> Arg(512)
@@ -51,11 +57,18 @@ BENCHMARK_REGISTER_F(PlaneFitFixture, PFCV_Mask)
     -> Arg(4096);
 
 BENCHMARK_REGISTER_F(PlaneFitFixture, PFEIGEN_Mask)
-        -> Arg(256)
-        -> Arg(512)
-        -> Arg(1024)
-        -> Arg(2048)
-        -> Arg(4096);
+    -> Arg(256)
+    -> Arg(512)
+    -> Arg(1024)
+    -> Arg(2048)
+    -> Arg(4096);
+
+BENCHMARK_REGISTER_F(PlaneFitFixture, PFEIGENSVD_Mask)
+    ->Arg(256)
+    ->Arg(512)
+    ->Arg(1024)
+    ->Arg(2048)
+    ->Arg(4096);
 
 /*
 Run on (8 X 3600 MHz CPU s)
@@ -64,17 +77,21 @@ CPU Caches:
   L1 Instruction 32 KiB (x4)
   L2 Unified 256 KiB (x4)
   L3 Unified 8192 KiB (x1)
-----------------------------------------------------------------------------
-Benchmark                                  Time             CPU   Iterations
-----------------------------------------------------------------------------
-PlaneFitFixture/PFCV_Mask/256           4636 ns         4604 ns       149333
-PlaneFitFixture/PFCV_Mask/512           7114 ns         7150 ns        89600
-PlaneFitFixture/PFCV_Mask/1024         12169 ns        11998 ns        56000
-PlaneFitFixture/PFCV_Mask/2048         23392 ns        23542 ns        29867
-PlaneFitFixture/PFCV_Mask/4096         45101 ns        45516 ns        15448
-PlaneFitFixture/PFEIGEN_Mask/256        3518 ns         3449 ns       194783
-PlaneFitFixture/PFEIGEN_Mask/512        6397 ns         6417 ns       112000
-PlaneFitFixture/PFEIGEN_Mask/1024      12572 ns        12556 ns        56000
-PlaneFitFixture/PFEIGEN_Mask/2048      32899 ns        32959 ns        21333
-PlaneFitFixture/PFEIGEN_Mask/4096      62255 ns        61654 ns        11151
+-------------------------------------------------------------------------------
+Benchmark                                     Time             CPU   Iterations
+-------------------------------------------------------------------------------
+PlaneFitFixture/PFCV_Mask/256              4633 ns         4604 ns       149333
+PlaneFitFixture/PFCV_Mask/512              7088 ns         7115 ns       112000
+PlaneFitFixture/PFCV_Mask/1024            12288 ns        12277 ns        56000
+PlaneFitFixture/PFCV_Mask/2048            23418 ns        22949 ns        32000
+PlaneFitFixture/PFCV_Mask/4096            45104 ns        44504 ns        15448
+PlaneFitFixture/PFEIGEN_Mask/256           3437 ns         3453 ns       203636
+PlaneFitFixture/PFEIGEN_Mask/512           6432 ns         6417 ns       112000
+PlaneFitFixture/PFEIGEN_Mask/1024         12557 ns        12556 ns        56000
+PlaneFitFixture/PFEIGEN_Mask/2048         32752 ns        32884 ns        20907
+PlaneFitFixture/PFEIGEN_Mask/4096         58404 ns        59291 ns         8960
+PlaneFitFixture/PFEIGENSVD_Mask/256       11210 ns        11230 ns        64000
+PlaneFitFixture/PFEIGENSVD_Mask/512       19676 ns        19496 ns        34462
+PlaneFitFixture/PFEIGENSVD_Mask/1024      44540 ns        44504 ns        15448
+PlaneFitFixture/PFEIGENSVD_Mask/2048      89925 ns        89979 ns         7467
 */

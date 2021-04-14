@@ -14,9 +14,11 @@ int main() {
         pts.push_back(cv::Point3d(pt.x(), pt.y(), pt.z()));
     auto res = M_MATH::PlaneFit(pts);
     auto res1 = M_MATH::PlaneFit(pts1);
+    auto res2 = M_MATH::PlaneFitSVD(pts1);
 
-    std::cout << res.first << '\n' << res.second << std::endl;
-    std::cout << res1.first << '\n' << res1.second << std::endl;
+    std::cout << res.first << '\n' << res.second << '\n' << std::endl;
+    std::cout << res1.first << '\n' << res1.second << '\n' << std::endl;
+    std::cout << res2.first << '\n' << res2.second << '\n' << std::endl;
 
     return 0;
 }
