@@ -39,28 +39,26 @@ find_package(Threads REQUIRED)
 #find_package(CGAL REQUIRED)
 #set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
-option(USE_OPEN3D      "USE_OPEN3D" ON)
+option(USE_OPEN3D      "USE_OPEN3D" OFF)
 
 #Eigen3
 # system eigen3 may conflict with eigen header files in open3d erd party,
 # so disable it when use open3d
-if (!USE_OPEN3D)
-if (APPLE)
-    find_package(Eigen3 REQUIRED)
-elseif(WIN32)
-    find_path(EIGEN_INCLUDE_DIR NAMES Eigen/CORE)
-    message(STATUS "Eigen include dir: ${EIGEN_INCLUDE_DIR}")
-    include_directories(${EIGEN_INCLUDE_DIR})
-endif()
+if (USE_OPEN3D)
+    find_package(Open3D REQUIRED)
+    include_directories(${Open3D_INCLUDE_DIRS})
+else()
+    if (APPLE)
+        find_package(Eigen3 REQUIRED)
+    elseif(WIN32)
+        find_path(EIGEN_INCLUDE_DIR NAMES Eigen/CORE)
+        message(STATUS "Eigen include dir: ${EIGEN_INCLUDE_DIR}")
+        include_directories(${EIGEN_INCLUDE_DIR})
+    endif()
 endif()
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
-
-if (USE_OPEN3D)
-find_package(Open3D REQUIRED)
-include_directories(${Open3D_INCLUDE_DIRS})
-endif()
 
 find_package(OpenMP)
 
