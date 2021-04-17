@@ -50,6 +50,7 @@ addExample(m_plane_fit plane_fit.cpp ${OpenCV_LIBS})
 addExample(m_curvefit_eigen curvefit_eigen.cpp ${OpenCV_LIBS})
 addExample(m_fft_eigen fft_eigen.cpp)
 addExample(m_correlation_eigen correlation_eigen.cpp ${OpenCV_LIBS})
+addExample(m_p1d_eigen p1d_eigen.cpp)
 
 # handle eigen installed by brew on APPLE
 if (APPLE)
@@ -57,6 +58,7 @@ if (APPLE)
     target_link_libraries(m_curvefit_eigen Eigen3::Eigen)
     target_link_libraries(m_fft_eigen Eigen3::Eigen)
     target_link_libraries(m_correlation_eigen Eigen3::Eigen)
+    target_link_libraries(m_p1d_eigen Eigen3::Eigen)
 endif()
 
 if (OpenMP_CXX_FOUND)
