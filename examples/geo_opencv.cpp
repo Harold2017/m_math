@@ -50,5 +50,7 @@ int main() {
 
     auto ppts = CrossSectionProject2D(pts, {-1, 0}, {1, 0}, 0.05f);
     std::cout << ppts << std::endl;
+    ppts = CrossSectionProject2D(pts, { 0, -1 }, { 0, 1 }, 0.05f, false);
+    std::cout << ppts << std::endl;
     return 0;
 }

@@ -139,7 +139,8 @@ namespace M_MATH {
     std::vector<cv::Point_<T>> CrossSectionProject2D(std::vector<cv::Point3_<T>> const& points,
                                                      cv::Point_<T> const& p1,
                                                      cv::Point_<T> const& p2,
-                                                     T threshold) {
+                                                     T threshold,
+                                                     bool point_in_between = true) {
 
         // line direction
         auto abs = std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2));
@@ -157,14 +158,30 @@ namespace M_MATH {
 
         std::vector<cv::Point_<T>> res;
         res.reserve(plane_pts.size());
-        // project point to line
-        for (auto const& pt : plane_pts) {
-            auto x = pt.x * dir.x + pt.y * dir.y;
-            // points between p1 and p2
-            if (x < p1.x || x > p2.x)
-                continue;
-            res.emplace_back(x, pt.z);
+        if (point_in_between) {
+            auto x1 = p1.x * dir.x + p1.y * dir.y;
+            auto x2 = p2.x * dir.x + p2.y * dir.y;
+            auto lhs = x1 < x2 ? x1 : x2;
+            auto rhs = x1 < x2 ? x2 : x1;
+            // project point to line
+            for (auto const& pt : plane_pts) {
+                auto x = pt.x * dir.x + pt.y * dir.y;
+                // points between p1 and p2
+                if (x < lhs || x > rhs)
+                    continue;
+                res.emplace_back(x, pt.z);
+            }
         }
+        else {
+            for (auto const& pt : plane_pts) {
+                res.emplace_back(pt.x * dir.x + pt.y * dir.y, pt.z);
+            }
+        }
+
+        // no points projected on line (line not cut model)
+        if (res.empty())
+            return res;
+
         // sort and remove duplicates
         std::sort(res.begin(), res.end(), [](cv::Point_<T> const& pt1,
                                              cv::Point_<T> const& pt2) {
