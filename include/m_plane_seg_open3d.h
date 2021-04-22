@@ -18,6 +18,15 @@ namespace M_MATH {
         bool valid = false;
         Eigen::Vector3d plane_center, plane_normal;
         std::vector<Eigen::Vector3d> plane_pts;
+
+        PlaneInfo() = default;
+
+        PlaneInfo(PlaneInfo&& move) noexcept {
+            valid = move.valid;
+            plane_center = move.plane_center;
+            plane_normal = move.plane_normal;
+            std::swap(plane_pts, move.plane_pts);
+        }
     };
 
     namespace details {
@@ -159,6 +168,60 @@ namespace M_MATH {
         res.plane_normal = cn.first;
         res.plane_pts = plane_pts;
         res.valid = true;
+        return res;
+    }
+
+    /**
+     * @brief segment multiple planes from point cloud
+     * @param pcd input point cloud
+     * @param min_left_points_ratio minimum left points ratio to end the segmentation
+     * @param distance_threshold RANSAC distance threshold
+     * @param ransac_n at least 3 points to form a plane primitive
+     * @param num_iterations RANSAC iterations
+     * @return list of segmented planes
+    */
+    std::vector<PlaneInfo> MultiplePlaneSeg(open3d::geometry::PointCloud const& pcd,
+                                            const double min_left_points_ratio /* = 0.05 */,
+                                            const double distance_threshold /* = 0.01 */,
+                                            const int ransac_n /* = 3 */,
+                                            const int num_iterations /* = 100 */) {
+        std::vector<PlaneInfo> res;
+        // copy pcd points
+        open3d::geometry::PointCloud _pcd{};
+        _pcd.points_ = pcd.points_;
+        size_t num_points = (1 - min_left_points_ratio) * pcd.points_.size();
+        size_t cnt = 0;
+
+        auto move_points = [](std::vector<Eigen::Vector3d>& pts, std::vector<size_t>& idx) {
+            std::vector<Eigen::Vector3d> res;
+            res.reserve(idx.size());
+            /* sort indices and then delete those elements from the vector from the highest to the lowest. 
+             * deleting the highest index on a list will not invalidate the lower indices you want to delete, 
+             * because only the elements higher than the deleted ones change their index.
+             */
+            std::sort(idx.begin(), idx.end());
+            for (int i = idx.size() - 1; i >= 0; i--) {
+                res.push_back(pts[idx[i]]);
+                pts.erase(pts.begin() + idx[i]);
+            }
+            return res;
+        };
+
+        while (cnt < num_points) {
+            auto plane = _pcd.SegmentPlane(distance_threshold, ransac_n, num_iterations);
+            auto plane_equation = std::get<0>(plane);
+            auto plane_pts_idx = std::get<1>(plane);
+
+            cnt += plane_pts_idx.size();
+
+            PlaneInfo pi;
+            pi.valid = true;
+            pi.plane_center = _pcd.points_[plane_pts_idx[0]];
+            pi.plane_normal = Eigen::Vector3d(plane_equation[0], plane_equation[1], plane_equation[2]);
+            pi.plane_pts = move_points(_pcd.points_, plane_pts_idx);
+            res.emplace_back(std::move(pi));
+        }
+
         return res;
     }
 }
