@@ -39,7 +39,7 @@ find_package(Threads REQUIRED)
 #find_package(CGAL REQUIRED)
 #set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
-option(USE_OPEN3D      "USE_OPEN3D" ON)
+option(USE_OPEN3D      "USE_OPEN3D" OFF)
 
 #Eigen3
 # system eigen3 may conflict with eigen header files in open3d erd party,
