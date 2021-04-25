@@ -52,5 +52,11 @@ int main() {
     std::cout << ppts << std::endl;
     ppts = CrossSectionProject2D(pts, { 0, -1 }, { 0, 1 }, 0.05f, false);
     std::cout << ppts << std::endl;
+
+    auto centrialized_pts_2d = CentrializePoints2D(ppts);
+    std::cout << "centrialized 2d points: \n" << centrialized_pts_2d << std::endl;
+    auto centrialized_pts_3d = CentrializePoints3D(pts);
+    std::cout << "centrialized 3d points: \n" << centrialized_pts_3d << std::endl;
+
     return 0;
 }

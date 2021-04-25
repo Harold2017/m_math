@@ -6,6 +6,7 @@
 #define M_MATH_M_GEO_OPENCV_H
 
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 
 namespace M_MATH {
     /**
@@ -194,6 +195,44 @@ namespace M_MATH {
         std::for_each(res.begin(), res.end(), [=](cv::Point_<T>& pt) { pt.x -= res_x; });
         res.shrink_to_fit();
         return res;
+    }
+
+    // centrialize 2d points against fitted line
+    // https://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
+    template<typename T>
+    std::vector<cv::Point_<T>> CentrializePoints2D(std::vector<cv::Point_<T>> const& p2fa) {
+        assert(!p2fa.empty());
+        cv::Vec<T, 4> line;
+        cv::fitLine(p2fa, line, cv::DIST_L2, 0, 0.01, 0.01);
+        // ax + by + c = 0
+        // line[1] x - line[0] y + line[3] * line[0] - line[1] * line[2] = 0
+        auto a = line[1];
+        auto b = -line[0];
+        auto c = line[3] * line[0] - line[1] * line[2];
+        auto d = sqrt(a * a + b * b);
+        std::vector<cv::Point_<T>> res;
+        res.reserve(p2fa.size());
+        for (auto pt : p2fa)
+            res.emplace_back(pt.x, (a * pt.x + b * pt.y + c) / d);
+        return res;
+    }
+
+    // centrialize 3d points against fitted plane
+    // https://mathworld.wolfram.com/Point-PlaneDistance.html
+    template<typename T>
+    std::vector<cv::Point3_<T>> CentrializePoints3D(std::vector<cv::Point3_<T>> const& p3fa) {
+        assert(!p3fa.empty());
+        auto plane = GetPlane(p3fa);
+        auto ABC = plane.first;
+        auto abc = plane.second;
+        // A(x - a) + B(y - b) + C(z - c) = 0
+        std::vector<cv::Point3_<T>> residues;
+        residues.reserve(p3fa.size());
+        auto D = cv::norm(ABC);
+        for (auto const& pt : p3fa) {
+            residues.emplace_back(pt.x, pt.y, (ABC.dot(pt - abc)) / D);
+        }
+        return residues;
     }
 }
 
