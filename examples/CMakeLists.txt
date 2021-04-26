@@ -53,6 +53,7 @@ addExample(m_correlation_eigen correlation_eigen.cpp ${OpenCV_LIBS})
 addExample(m_p1d_eigen p1d_eigen.cpp)
 addExample(m_plane_seg_open3d plane_seg_open3d.cpp ${Open3D_LIBRARIES})
 addExample(m_linefit linefit.cpp ${OpenCV_LIBS})
+addExample(m_mr mr.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (APPLE)
