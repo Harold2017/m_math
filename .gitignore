@@ -171,3 +171,12 @@ Temporary Items
 
 # IDEA
 .idea
+
+# vscode
+.vscode
+
+# clang-tidy
+.clang-tidy
+
+# build
+build

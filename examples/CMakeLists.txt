@@ -69,3 +69,8 @@ endif()
 if (OpenMP_CXX_FOUND)
         target_link_libraries(m_fft_eigen OpenMP::OpenMP_CXX)
 endif()
+
+# TBB
+if (USE_TBBMALLOC)
+	target_link_libraries(m_mesh_volume_surface_area TBB::tbbmalloc TBB::tbbmalloc_proxy)
+endif()

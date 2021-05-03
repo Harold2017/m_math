@@ -15,6 +15,9 @@ option(M_MATH_BENCH     "Build benchmarks" ON)
 option(M_MATH_STATIC    "Builds a static library instead of a shared one" OFF)
 option(M_MATH_SANITIZE  "Adds sanitive flags" OFF)
 
+option(USE_OPEN3D      "USE_OPEN3D" ON)
+option(USE_TBBMALLOC   "USE_TBBMalloc" OFF)
+
 if (M_MATH_STATIC)
     set(M_MATH_LIB_NAME m_math_static)
     set(M_MATH_LIB_TYPE STATIC)
@@ -39,8 +42,6 @@ find_package(Threads REQUIRED)
 #find_package(CGAL REQUIRED)
 #set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE TRUE)
 
-option(USE_OPEN3D      "USE_OPEN3D" OFF)
-
 #Eigen3
 # system eigen3 may conflict with eigen header files in open3d erd party,
 # so disable it when use open3d
@@ -55,7 +56,11 @@ else()
         message(STATUS "Eigen include dir: ${EIGEN_INCLUDE_DIR}")
         include_directories(${EIGEN_INCLUDE_DIR})
     endif()
-endif()
+endif(USE_OPEN3D)
+
+if (USE_TBBMALLOC)
+	find_package(TBB REQUIRED COMPONENTS tbbmalloc tbbmalloc_proxy)
+endif(USE_TBBMALLOC)
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -86,6 +91,8 @@ message(STATUS "  Build benchmarks     : ${M_MATH_BENCH}")
 message(STATUS "  Sanitize flags       : ${M_MATH_SANITIZE}")
 message(STATUS "  Boost include dirs   : ${Boost_INCLUDE_DIRS}")
 message(STATUS "  OpenMP found         : ${OPENMP_CXX_FOUND}")
+message(STATUS "  Use Open3D           : ${USE_OPEN3D}")
+message(STATUS "  Use TBBMALLOC        : ${USE_TBBMALLOC}")
 message(STATUS "")
 
 # examples
