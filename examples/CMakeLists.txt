@@ -57,6 +57,7 @@ addExample(m_mr mr.cpp ${OpenCV_LIBS})
 addExample(m_cov_attr cov_attr.cpp ${Open3D_LIBRARIES})
 addExample(m_filesystem filesystem.cpp)
 addExample(m_arg_parser arg_parser.cpp ${OpenCV_LIBS} ${Open3D_LIBRARIES})
+addExample(m_robust_gaussian_regression robust_gaussian_regression.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (APPLE)
@@ -66,6 +67,7 @@ if (APPLE)
     target_link_libraries(m_correlation_eigen Eigen3::Eigen)
     target_link_libraries(m_p1d_eigen Eigen3::Eigen)
     target_link_libraries(m_linefit Eigen3::Eigen)
+    target_link_libraries(m_robust_gaussian_regression Eigen3::Eigen)
 endif()
 
 if (OpenMP_CXX_FOUND)

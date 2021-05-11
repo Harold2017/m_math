@@ -11,11 +11,11 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(M_MATH_TEST      "Build tests" OFF)
-option(M_MATH_BENCH     "Build benchmarks" ON)
+option(M_MATH_BENCH     "Build benchmarks" OFF)
 option(M_MATH_STATIC    "Builds a static library instead of a shared one" OFF)
 option(M_MATH_SANITIZE  "Adds sanitive flags" OFF)
 
-option(USE_OPEN3D      "USE_OPEN3D" ON)
+option(USE_OPEN3D      "USE_OPEN3D" OFF)
 option(USE_TBBMALLOC   "USE_TBBMalloc" OFF)
 
 if (M_MATH_STATIC)
