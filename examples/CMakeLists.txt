@@ -58,6 +58,7 @@ addExample(m_cov_attr cov_attr.cpp ${Open3D_LIBRARIES})
 addExample(m_filesystem filesystem.cpp)
 addExample(m_arg_parser arg_parser.cpp ${OpenCV_LIBS} ${Open3D_LIBRARIES})
 addExample(m_robust_gaussian_regression robust_gaussian_regression.cpp ${OpenCV_LIBS})
+addExample(m_gaussian_filter gaussian_filter.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (APPLE)
