@@ -10,30 +10,32 @@
 namespace M_MATH {
     // 1D Second-Order Gaussian Regression Filter
     // w(k,p)= Ax2 + Bx + C where x = (k-p)dx
-    Eigen::VectorXd RGR2_1D(Eigen::VectorXd const& data, 
-                            double lambdac = 0.8, 
-                            double dx = 0.01, 
-                            double tol = 1e-10,
-                            unsigned max_iteration_no = 29) {
+    template<typename T>
+    Eigen::Matrix<T, Eigen::Dynamic, 1> 
+    RGR2_1D(Eigen::Matrix<T, Eigen::Dynamic, 1> const& data,
+                                                T lambdac = 0.8, 
+                                                T dx = 0.01, 
+                                                T tol = 1e-10,
+                                                unsigned max_iteration_no = 29) {
         auto n = data.size();
-        double constant = sqrt(log(2) / 2 / EIGEN_PI / EIGEN_PI);
-        Eigen::VectorXd x = Eigen::VectorXd::LinSpaced(n, 0, n) * dx;
+        static double const constant = sqrt(log(2) / 2 / EIGEN_PI / EIGEN_PI);
+        Eigen::Matrix<T, Eigen::Dynamic, 1> x = Eigen::Matrix<T, Eigen::Dynamic, 1>::LinSpaced(n, 0, n) * dx;
 
         unsigned iterationNo = 0;
-        Eigen::VectorXd delta = Eigen::VectorXd::Ones(n);
+        Eigen::Matrix<T, Eigen::Dynamic, 1> delta = Eigen::Matrix<T, Eigen::Dynamic, 1>::Ones(n);
         double CBx = 1;
         double CB_old = 1;
 
-        Eigen::Matrix3d M;
-        Eigen::Vector3d Q;
-        Eigen::Vector3d P;
-        Eigen::VectorXd w1(n);
-        Eigen::VectorXd r1(n);
+        Eigen::Matrix<T, 3, 3> M;
+        Eigen::Matrix<T, 3, 1> Q;
+        Eigen::Matrix<T, 3, 1> P;
+        Eigen::Matrix<T, Eigen::Dynamic, 1> w1(n);
+        Eigen::Matrix<T, Eigen::Dynamic, 1> r1(n);
 
         while (CBx > tol) {
             for (auto k = 0; k < n; k++) {
-                auto p = Eigen::VectorXd::LinSpaced(n, 0, n);
-                Eigen::VectorXd S = (1/sqrt(2 * EIGEN_PI * EIGEN_PI)/constant/lambdac) * exp(-0.5 * ((k - p.array()) * dx / constant / lambdac).array().pow(2));
+                auto p = Eigen::Matrix<T, Eigen::Dynamic, 1>::LinSpaced(n, 0, n);
+                Eigen::Matrix<T, Eigen::Dynamic, 1> S = /*(1/sqrt(2 * EIGEN_PI * EIGEN_PI)/constant/lambdac) * */ exp(-0.5 * ((k - p.array()) * dx / constant / lambdac).array().pow(2));
                 S /= S.sum();
                 x = (k - p.array()) * dx;
                 M(0, 0) = (delta.array() * S.array() * (x.array().pow(0))).sum();  // A0
