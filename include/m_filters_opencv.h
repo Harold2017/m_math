@@ -10,11 +10,12 @@
 #include "m_fft_opencv.h"
 
 namespace M_MATH {
-    // in, out has the same size
+    // in, out has the same size (1, N)
     void Gaussian1D(cv::Mat const& in, cv::Mat & out, int window_len) {
-        cv::blur(in, out, cv::Size(1, window_len), cv::Point(-1,-1), cv::BORDER_CONSTANT);
+        cv::GaussianBlur(in, out, cv::Size(window_len, 1), 0, 0, cv::BORDER_CONSTANT);
     }
 
+    // in, out has the same size (M, N)
     void Gaussian2D(cv::Mat const& in, cv::Mat & out, int window_len_x, int window_len_y, double sigma_x, double sigma_y) {
         cv::GaussianBlur(in, out, cv::Size(window_len_x, window_len_y), sigma_x, sigma_y, cv::BORDER_CONSTANT);
     }

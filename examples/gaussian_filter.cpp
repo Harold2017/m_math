@@ -23,7 +23,6 @@ int main() {
 	double dx = 0.25;
 	int M = (int)(2 * lambdac / dx + 1);
 
-	// FIXME: seems wrong
 	cv::Mat in(1, N, CV_64F), out(1, N, CV_64F);
 	for (auto i = 0; i < N; i++) in.at<double>(0, i) = data[i];
 	M_MATH::Gaussian1D(in, out, M);
@@ -46,7 +45,7 @@ int main() {
 	}
 	cv::polylines(board, dpts, false, cv::Scalar(0, 255, 0), 1, 8, 0);
 	cv::polylines(board, rpts, false, cv::Scalar(255, 255, 255), 1, 8, 0);
-	cv::polylines(board, kpts, false, cv::Scalar(255, 0, 0), 1, 8, 0);
+	//cv::polylines(board, kpts, false, cv::Scalar(255, 0, 0), 1, 8, 0);
 	cv::polylines(board, gpts, false, cv::Scalar(0, 0, 255), 1, 8, 0);
 	cv::imshow("board", board);
 	cv::waitKey();
