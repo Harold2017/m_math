@@ -61,6 +61,7 @@ addExample(m_robust_gaussian_regression robust_gaussian_regression.cpp ${OpenCV_
 addExample(m_gaussian_filter gaussian_filter.cpp ${OpenCV_LIBS})
 addExample(m_convolution convolution.cpp)
 addExample(m_pt_in_polygon pt_in_polygon.cpp)
+addExample(m_feret feret.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (APPLE)
