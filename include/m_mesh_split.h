@@ -20,8 +20,8 @@ namespace M_MATH {
 
 	// https://gdbooks.gitbooks.io/3dcollisions/content/Chapter2/static_aabb_plane.html
 	bool BoundPlaneIntersect(open3d::geometry::OrientedBoundingBox const& bound,
-		Eigen::Vector3d const& plane_center,
-		Eigen::Vector3d const& plane_normal) {
+		                     Eigen::Vector3d const& plane_center,
+		                     Eigen::Vector3d const& plane_normal) {
 		auto bound_center = bound.GetCenter();  // AABB center
 		auto bound_extents = bound.GetMaxBound() - bound_center;  // positive extents
 		// Compute the projection interval radius of b onto L(t) = b.c + t * p.n
@@ -33,11 +33,11 @@ namespace M_MATH {
 	}
 
 	bool LinePlaneIntersect(Eigen::Vector3d const& p0,
-		Eigen::Vector3d const& p1,
-		Eigen::Vector3d const& plane_center,
-		Eigen::Vector3d const& plane_normal,
-		Eigen::Vector3d& intersect_point,
-		double epsilon = 1e-6) {  //std::numeric_limits<double>::epsilon()
+		                    Eigen::Vector3d const& p1,
+		                    Eigen::Vector3d const& plane_center,
+		                    Eigen::Vector3d const& plane_normal,
+		                    Eigen::Vector3d& intersect_point,
+		                    double epsilon = 1e-6) {  //std::numeric_limits<double>::epsilon()
 		auto line_dir = (p1 - p0).normalized();
 		auto d = plane_normal.dot(line_dir);
 		if (std::abs(d) < epsilon)
@@ -58,41 +58,32 @@ namespace M_MATH {
 	 *          | i1
 	 */
 	bool TrianglePlaneIntersect(std::vector<Eigen::Vector3d> const& vertices,
-		std::vector<Eigen::Vector3i> const& triangles,
-		size_t triangle_idx,
-		Eigen::Vector3d const& plane_center,
-		Eigen::Vector3d const& plane_normal,
-		TmpMesh& l_tmp_mesh,
-		TmpMesh& r_tmp_mesh) {
+		                        std::vector<Eigen::Vector3i> const& triangles,
+		                        size_t triangle_idx,
+		                        Eigen::Vector3d const& plane_center,
+		                        Eigen::Vector3d const& plane_normal,
+		                        TmpMesh& l_tmp_mesh,
+		                        TmpMesh& r_tmp_mesh) {
 		auto triangle = triangles[triangle_idx];
 
 		auto is_triangle_vertices_in_mesh = [](Eigen::Vector3i triangle, TmpMesh const& mesh) {
 			return std::array<bool, 3>{mesh.vertices_idx.find(triangle.x()) != mesh.vertices_idx.end(),
-				mesh.vertices_idx.find(triangle.y()) != mesh.vertices_idx.end(),
-				mesh.vertices_idx.find(triangle.z()) != mesh.vertices_idx.end()};
+				                       mesh.vertices_idx.find(triangle.y()) != mesh.vertices_idx.end(),
+				                       mesh.vertices_idx.find(triangle.z()) != mesh.vertices_idx.end()};
 		};
 
 		// triangle vertices all in one side mesh
 		auto bls = is_triangle_vertices_in_mesh(triangle, l_tmp_mesh);
 		if (bls[0] == bls[1] && bls[1] == bls[2]) {
-			if (bls[0])
-				l_tmp_mesh.triangles.push_back(Eigen::Vector3i(l_tmp_mesh.vertices_idx[triangle.x()], l_tmp_mesh.vertices_idx[triangle.y()], l_tmp_mesh.vertices_idx[triangle.z()]));
-			else
-				r_tmp_mesh.triangles.push_back(Eigen::Vector3i(r_tmp_mesh.vertices_idx[triangle.x()], r_tmp_mesh.vertices_idx[triangle.y()], r_tmp_mesh.vertices_idx[triangle.z()]));
+			bls[0] ? l_tmp_mesh.triangles.emplace_back(l_tmp_mesh.vertices_idx[triangle.x()], l_tmp_mesh.vertices_idx[triangle.y()], l_tmp_mesh.vertices_idx[triangle.z()])
+			       : r_tmp_mesh.triangles.emplace_back(r_tmp_mesh.vertices_idx[triangle.x()], r_tmp_mesh.vertices_idx[triangle.y()], r_tmp_mesh.vertices_idx[triangle.z()]);
 			return false;
 		}
 
 		// find lonely vertex
-		int v0 = 0;
-		if (bls[0] != bls[1])
-			v0 = bls[0] != bls[2] ? 0 : 1;
-		else
-			v0 = 2;
-
-		int v1 = v0 + 1;
-		if (v1 == 3) v1 = 0;
-		int v2 = v0 - 1;
-		if (v2 == -1) v2 = 2;
+        int v0 = (bls[0] != bls[1]) ? (bls[0] != bls[2] ? 0 : 1) : 2;
+        int v1 = (v0 + 1) % 3;
+        int v2 = (v0 + 2) % 3;
 
 		/*
 		// add all intersected triangles into l_mesh
@@ -126,19 +117,12 @@ namespace M_MATH {
 		r_tmp_mesh.vertices.push_back(i1);
 
 		// create new triangles: [v0, i0, i1], [i0, v1, v2], [v2, i1, i0]
-		bls[v0] ? l_tmp_mesh.triangles.push_back(Eigen::Vector3i(l_tmp_mesh.vertices_idx[triangle(v0)], Nl, Nl + 1)) : r_tmp_mesh.triangles.push_back(Eigen::Vector3i(r_tmp_mesh.vertices_idx[triangle(v0)], Nr, Nr + 1));
-		if (bls[v1]) {
-			l_tmp_mesh.triangles.push_back(Eigen::Vector3i(Nl, l_tmp_mesh.vertices_idx[triangle(v1)], l_tmp_mesh.vertices_idx[triangle(v2)]));
-		}
-		else {
-			r_tmp_mesh.triangles.push_back(Eigen::Vector3i(Nr, r_tmp_mesh.vertices_idx[triangle(v1)], r_tmp_mesh.vertices_idx[triangle(v2)]));
-		}
-		if (bls[v2]) {
-			l_tmp_mesh.triangles.push_back(Eigen::Vector3i(l_tmp_mesh.vertices_idx[triangle(v2)], Nl + 1, Nl));
-		}
-		else {
-			r_tmp_mesh.triangles.push_back(Eigen::Vector3i(r_tmp_mesh.vertices_idx[triangle(v2)], Nr + 1, Nr));
-		}
+		bls[v0] ? l_tmp_mesh.triangles.emplace_back(l_tmp_mesh.vertices_idx[triangle(v0)], Nl, Nl + 1)
+		        : r_tmp_mesh.triangles.emplace_back(r_tmp_mesh.vertices_idx[triangle(v0)], Nr, Nr + 1);
+		bls[v1] ? l_tmp_mesh.triangles.emplace_back(Nl, l_tmp_mesh.vertices_idx[triangle(v1)], l_tmp_mesh.vertices_idx[triangle(v2)])
+                : r_tmp_mesh.triangles.emplace_back(Nr, r_tmp_mesh.vertices_idx[triangle(v1)], r_tmp_mesh.vertices_idx[triangle(v2)]);
+		bls[v2] ? l_tmp_mesh.triangles.emplace_back(l_tmp_mesh.vertices_idx[triangle(v2)], Nl + 1, Nl)
+		        : r_tmp_mesh.triangles.emplace_back(r_tmp_mesh.vertices_idx[triangle(v2)], Nr + 1, Nr);
 		//*/
 
 		return true;
@@ -154,17 +138,17 @@ namespace M_MATH {
 	 * @return successfully cut or not
 	*/
 	bool MeshCut(open3d::geometry::TriangleMesh const& mesh,
-		Eigen::Vector3d const& plane_center,
-		Eigen::Vector3d const& plane_normal,
-		open3d::geometry::TriangleMesh& l_mesh,
-		open3d::geometry::TriangleMesh& r_mesh) {
+		         Eigen::Vector3d const& plane_center,
+		         Eigen::Vector3d const& plane_normal,
+		         open3d::geometry::TriangleMesh& l_mesh,
+		         open3d::geometry::TriangleMesh& r_mesh) {
 		// 1. check whether bounding box intersect
 		if (!BoundPlaneIntersect(mesh.GetOrientedBoundingBox(), plane_center, plane_normal))
 			return false;
 
 		TmpMesh l_tmp_mesh, r_tmp_mesh;
 
-		// 2. seperate vertices
+		// 2. separate vertices
 		auto& vertices = mesh.vertices_;
 		auto N = vertices.size();
 		l_tmp_mesh.vertices.reserve(N);
@@ -186,7 +170,7 @@ namespace M_MATH {
 		if (l_tmp_mesh.vertices.empty() || r_tmp_mesh.vertices.empty())
 			return false;
 
-		// 3. seperate triangles and cut tirangles which intersected with plane
+		// 3. separate triangles and cut tirangles which intersected with plane
 		auto& triangles = mesh.triangles_;
 		auto M = triangles.size();
 		l_tmp_mesh.triangles.reserve(M);
@@ -219,7 +203,8 @@ namespace M_MATH {
 	 * @param mesh
 	 * @return <triangle clusters, number of triangles in clusters>
 	*/
-	std::pair<std::vector<size_t>, std::vector<size_t>> ClusterTriangles(open3d::geometry::TriangleMesh const& mesh) {
+	std::pair<std::vector<size_t>, std::vector<size_t>>
+	ClusterTriangles(open3d::geometry::TriangleMesh const& mesh) {
 		std::vector<size_t> triangle_clusters(mesh.triangles_.size(), -1);  // -1 as unclustered
 		std::vector<size_t> num_triangles;
 
@@ -229,11 +214,11 @@ namespace M_MATH {
 #pragma omp parallel for schedule(static)
 		for (auto tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
 			const auto& triangle = mesh.triangles_[tidx];
-			for (auto tri : edges_to_triangles[mesh.GetOrderedEdge(triangle(0), triangle(1))])
+			for (auto tri : edges_to_triangles[open3d::geometry::TriangleMesh::GetOrderedEdge(triangle(0), triangle(1))])
 				adjacency_list[tidx].insert(tri);
-			for (auto tri : edges_to_triangles[mesh.GetOrderedEdge(triangle(0), triangle(2))])
+			for (auto tri : edges_to_triangles[open3d::geometry::TriangleMesh::GetOrderedEdge(triangle(0), triangle(2))])
 				adjacency_list[tidx].insert(tri);
-			for (auto tri : edges_to_triangles[mesh.GetOrderedEdge(triangle(1), triangle(2))])
+			for (auto tri : edges_to_triangles[open3d::geometry::TriangleMesh::GetOrderedEdge(triangle(1), triangle(2))])
 				adjacency_list[tidx].insert(tri);
 		}
 
@@ -245,7 +230,7 @@ namespace M_MATH {
 				continue;
 			}
 
-			// unclustered
+			// un-clustered
 			std::queue<size_t> triangle_queue;
 			size_t cluster_n_triangles = 0;
 
@@ -277,7 +262,9 @@ namespace M_MATH {
 	 * @param cluster_min_size
 	 * @return cluster of triangle indices
 	*/
-	std::unordered_map<size_t, std::vector<size_t>> MeshTrianglesSplit(open3d::geometry::TriangleMesh const& mesh, size_t cluster_min_size = 10) {
+	std::unordered_map<size_t, std::vector<size_t>>
+	MeshTrianglesSplit(open3d::geometry::TriangleMesh const& mesh,
+                       size_t cluster_min_size = 10) {
 		auto triangle_clusters_nums = ClusterTriangles(mesh);
 		auto const& triangle_clusters = triangle_clusters_nums.first;
 		auto const& num_triangles = triangle_clusters_nums.second;
@@ -308,7 +295,9 @@ namespace M_MATH {
 	 * @param cluster_min_area 
 	 * @return 
 	*/
-	std::unordered_map<size_t, std::vector<size_t>> MeshTrianglesSplit(open3d::geometry::TriangleMesh const& mesh, double cluster_min_area) {
+	std::unordered_map<size_t, std::vector<size_t>>
+	MeshTrianglesSplit(open3d::geometry::TriangleMesh const& mesh,
+                       double cluster_min_area) {
 		auto triangle_clusters_nums_areas = mesh.ClusterConnectedTriangles();
 		auto const& triangle_clusters = std::get<0>(triangle_clusters_nums_areas);
 		auto const& num_triangles = std::get<1>(triangle_clusters_nums_areas);
@@ -340,7 +329,9 @@ namespace M_MATH {
 	 * @param cluster_min_size
 	 * @return cluster of meshes
 	*/
-	std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>> MeshSplit(open3d::geometry::TriangleMesh const& mesh, size_t cluster_min_size = 10) {
+	std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>>
+	MeshSplit(open3d::geometry::TriangleMesh const& mesh,
+              size_t cluster_min_size = 10) {
 		auto triangle_clusters_nums = ClusterTriangles(mesh);
 		auto const& triangle_clusters = triangle_clusters_nums.first;
 		auto const& num_triangles = triangle_clusters_nums.second;
@@ -383,7 +374,9 @@ namespace M_MATH {
 	 * @param cluster_min_area 
 	 * @return 
 	*/
-	std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>> MeshSplit(open3d::geometry::TriangleMesh const& mesh, double cluster_min_area) {
+	std::unordered_map<size_t, std::shared_ptr<open3d::geometry::TriangleMesh>>
+	MeshSplit(open3d::geometry::TriangleMesh const& mesh,
+              double cluster_min_area) {
 		auto triangle_clusters_nums_areas = mesh.ClusterConnectedTriangles();
 		auto const& triangle_clusters = std::get<0>(triangle_clusters_nums_areas);
 		auto const& num_triangles = std::get<1>(triangle_clusters_nums_areas);
@@ -427,7 +420,9 @@ namespace M_MATH {
 	 * @param cluster_min_size
 	 * @return cluster of meshes
 	*/
-	std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> MeshSplit2(open3d::geometry::TriangleMesh const& mesh, size_t cluster_min_size = 10) {
+	std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>>
+	MeshSplit2(open3d::geometry::TriangleMesh const& mesh,
+               size_t cluster_min_size = 10) {
 		auto triangle_clusters_nums = ClusterTriangles(mesh);
 		auto const& triangle_clusters = triangle_clusters_nums.first;
 		auto const& num_triangles = triangle_clusters_nums.second;
@@ -472,13 +467,15 @@ namespace M_MATH {
 	 * @param cluster_min_area
 	 * @return
 	*/
-	std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> MeshSplit2(open3d::geometry::TriangleMesh const& mesh, double cluster_min_area) {
+	std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>>
+	MeshSplit2(open3d::geometry::TriangleMesh const& mesh,
+               double cluster_min_area) {
 		auto triangle_clusters_nums_areas = mesh.ClusterConnectedTriangles();
 		auto const& triangle_clusters = std::get<0>(triangle_clusters_nums_areas);
 		auto const& num_triangles = std::get<1>(triangle_clusters_nums_areas);
 		auto const& areas = std::get<2>(triangle_clusters_nums_areas);
 
-		// cluster idx to vertices idxs
+		// cluster idx to vertices indices
 		std::unordered_map<size_t, std::unordered_set<size_t>> cluster_idx_vertices;
 		cluster_idx_vertices.reserve(num_triangles.size());
 		// valid cluster at least has area of cluster_min_area
@@ -519,7 +516,10 @@ namespace M_MATH {
 	 * @param get_outside if true, return mesh outside the bbox, otherwise, return mesh inside the bbox
 	 * @return cropped mesh
 	*/
-	std::shared_ptr<open3d::geometry::TriangleMesh> MeshCrop(open3d::geometry::TriangleMesh const& mesh, open3d::geometry::OrientedBoundingBox const& bbox, bool get_outside = true) {
+	std::shared_ptr<open3d::geometry::TriangleMesh>
+	MeshCrop(open3d::geometry::TriangleMesh const& mesh,
+             open3d::geometry::OrientedBoundingBox const& bbox,
+             bool get_outside = true) {
 		if (bbox.IsEmpty())
 			throw;
 		if (!get_outside)
@@ -548,7 +548,10 @@ namespace M_MATH {
 	 * @param get_outside if true, return mesh outside the bbox, otherwise, return mesh inside the bbox
 	 * @return cropped mesh
 	*/
-	std::shared_ptr<open3d::geometry::TriangleMesh> MeshCrop(open3d::geometry::TriangleMesh const& mesh, open3d::geometry::AxisAlignedBoundingBox const& bbox, bool get_outside = true) {
+	std::shared_ptr<open3d::geometry::TriangleMesh>
+	MeshCrop(open3d::geometry::TriangleMesh const& mesh,
+             open3d::geometry::AxisAlignedBoundingBox const& bbox,
+             bool get_outside = true) {
 		if (bbox.IsEmpty())
 			throw;
 		if (!get_outside)
@@ -568,4 +571,4 @@ namespace M_MATH {
 	}
 }
 
-#endif M_MATH_M_MESH_SPLIT_H
+#endif //M_MATH_M_MESH_SPLIT_H
