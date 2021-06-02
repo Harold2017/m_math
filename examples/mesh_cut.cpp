@@ -7,6 +7,8 @@
 
 #include <opencv2/imgproc.hpp>
 
+#include "concaveman.hpp"
+
 /*
 #include "earcut.hpp"
 
@@ -54,6 +56,21 @@ std::vector<Eigen::Vector2d> ConvexHull(std::vector<Eigen::Vector2d> const& poly
     return res;
 }
 
+// concave hull
+std::vector<Eigen::Vector2d> ConcaveHull(std::vector<Eigen::Vector2d> const& polygon_pts) {
+    std::vector<std::array<double, 2>> pts(polygon_pts.size());
+    std::transform(polygon_pts.begin(), polygon_pts.end(), pts.begin(), [](Eigen::Vector2d const& p){ return std::array<double, 2>{p(0), p(1)}; });
+
+    cv::Mat mat = cv::Mat(int(polygon_pts.size()), 2, CV_32F, (void*)&polygon_pts[0](0));
+    std::vector<int> indices;
+    cv::convexHull(mat, indices, false, false);
+
+    auto concave_hull = M_MATH::CONCAVEMAN::concaveman<double, 16>(pts, indices);
+    std::vector<Eigen::Vector2d> res(concave_hull.size());
+    std::transform(concave_hull.begin(), concave_hull.end(), res.begin(), [](std::array<double, 2> const& p){ return Eigen::Vector2d{p[0], p[1]}; });
+    return res;
+}
+
 int main(int argc, char* argv[]) {
     assert(argc == 3);  // argv[1]: mesh_file path, argv[2]: z cross section threshold for volume computation
     auto mesh_file_path = std::string(argv[1]);
@@ -84,9 +101,31 @@ int main(int argc, char* argv[]) {
     std::vector<Eigen::Vector2d> intersected_pts_2d(r_tmp_mesh_intersected_pt_indices.size());
     std::transform(r_tmp_mesh_intersected_pt_indices.begin(), r_tmp_mesh_intersected_pt_indices.end(), intersected_pts_2d.begin(), [&](size_t idx) { return Eigen::Vector2d{r_mesh.vertices_[idx].x(), r_mesh.vertices_[idx].y()}; });
 
-    auto convex_hull = ConvexHull(intersected_pts_2d);
+    std::vector<Eigen::Vector2d> convex_hull;
+    {
+        TIME_BLOCK("- convex hull: ");
+        convex_hull = ConvexHull(intersected_pts_2d);
+    }
     printf("intersected polygon convex hull points size: %lu\n", convex_hull.size());
     printf("intersected polygon convex hull plane area: %f\n", PolygonArea(convex_hull));
+
+    std::vector<Eigen::Vector2d> concave_hull;
+    {
+        TIME_BLOCK("- concave hull: ");
+        concave_hull = ConcaveHull(intersected_pts_2d);
+    }
+    printf("intersected polygon concave hull points size: %lu\n", concave_hull.size());
+    printf("intersected polygon concave hull plane area: %f\n", PolygonArea(concave_hull));
+
+    std::vector<Eigen::Vector3d> convex_hull_pts(convex_hull.size()), concave_hull_pts(concave_hull.size());
+    std::transform(convex_hull.begin(), convex_hull.end(), convex_hull_pts.begin(), [=](Eigen::Vector2d const& p) { return Eigen::Vector3d(p(0), p(1), height); });
+    std::transform(concave_hull.begin(), concave_hull.end(), concave_hull_pts.begin(), [=](Eigen::Vector2d const& p) { return Eigen::Vector3d(p(0), p(1), height); });
+    auto convex_hull_pcd = std::make_shared<open3d::geometry::PointCloud>(convex_hull_pts);
+    auto concave_hull_pcd = std::make_shared<open3d::geometry::PointCloud>(concave_hull_pts);
+    convex_hull_pcd->PaintUniformColor({1, 0, 0});
+    concave_hull_pcd->PaintUniformColor({0, 1, 0});
+    open3d::visualization::DrawGeometries({ convex_hull_pcd }, "intersected plane convex", 1920, 1080);
+    open3d::visualization::DrawGeometries({ concave_hull_pcd }, "intersected plane concave", 1920, 1080);
 
     /*
     std::vector<size_t> indices;
