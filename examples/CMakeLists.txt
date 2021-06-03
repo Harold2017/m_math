@@ -63,6 +63,7 @@ addExample(m_convolution convolution.cpp)
 addExample(m_pt_in_polygon pt_in_polygon.cpp)
 addExample(m_feret feret.cpp ${OpenCV_LIBS})
 addExample(m_mesh_cut mesh_cut.cpp ${OpenCV_LIBS} ${Open3D_LIBRARIES})
+addExample(m_convex_hull convex_hull.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (NOT USE_OPEN3D AND APPLE)
@@ -74,6 +75,7 @@ if (NOT USE_OPEN3D AND APPLE)
     target_link_libraries(m_linefit Eigen3::Eigen)
     target_link_libraries(m_arg_parser Eigen3::Eigen)
     target_link_libraries(m_robust_gaussian_regression Eigen3::Eigen)
+    target_link_libraries(m_convex_hull Eigen3::Eigen)
 endif()
 
 if (OpenMP_CXX_FOUND)

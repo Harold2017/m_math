@@ -48,11 +48,14 @@ double PolygonArea(std::vector<Eigen::Vector2d> const& polygon_pts, bool isClose
 
 // find convex hull of polygon
 std::vector<Eigen::Vector2d> ConvexHull(std::vector<Eigen::Vector2d> const& polygon_pts) {
-    cv::Mat mat = cv::Mat(int(polygon_pts.size()), 2, CV_32F, (void*)&polygon_pts[0](0));
+    std::vector<cv::Point2d> pts(polygon_pts.size());
+    std::transform(polygon_pts.begin(), polygon_pts.end(), pts.begin(), [](Eigen::Vector2d const& p) { return cv::Point2d{ p(0), p(1) }; });
+    cv::Mat mat(pts);
+    mat.convertTo(mat, CV_32FC1);
     std::vector<int> indices;
     cv::convexHull(mat, indices, false, false);
     std::vector<Eigen::Vector2d> res(indices.size());
-    std::transform(indices.begin(), indices.end(), res.begin(), [&](int idx){ return polygon_pts[idx]; });
+    std::transform(indices.begin(), indices.end(), res.begin(), [&](int idx) { return polygon_pts[idx]; });
     return res;
 }
 
@@ -61,7 +64,10 @@ std::vector<Eigen::Vector2d> ConcaveHull(std::vector<Eigen::Vector2d> const& pol
     std::vector<std::array<double, 2>> pts(polygon_pts.size());
     std::transform(polygon_pts.begin(), polygon_pts.end(), pts.begin(), [](Eigen::Vector2d const& p){ return std::array<double, 2>{p(0), p(1)}; });
 
-    cv::Mat mat = cv::Mat(int(polygon_pts.size()), 2, CV_32F, (void*)&polygon_pts[0](0));
+    std::vector<cv::Point2d> pts_cv(polygon_pts.size());
+    std::transform(polygon_pts.begin(), polygon_pts.end(), pts_cv.begin(), [](Eigen::Vector2d const& p) { return cv::Point2d{ p(0), p(1) }; });
+    cv::Mat mat(pts_cv);
+    mat.convertTo(mat, CV_32FC1);
     std::vector<int> indices;
     cv::convexHull(mat, indices, false, false);
 
