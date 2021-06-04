@@ -9,6 +9,8 @@
 
 #include "concaveman.hpp"
 
+#include "m_voxelgrid2d.h"
+
 /*
 #include "earcut.hpp"
 
@@ -77,6 +79,56 @@ std::vector<Eigen::Vector2d> ConcaveHull(std::vector<Eigen::Vector2d> const& pol
     return res;
 }
 
+// contour
+std::vector<std::vector<Eigen::Vector2d>> Contours(std::vector<Eigen::Vector2d> const& points, size_t min_contour_points_num = 20) {
+    // find four extreme points
+    double x_min = points[0](0);
+    double x_max = points[0](0);
+    double y_min = points[0](1);
+    double y_max = points[0](1);
+    for (auto i = 0; i < points.size(); i++) {
+        auto p = points[i];
+        if (p(0) < x_min) x_min = p(0);
+        if (p(0) > x_max) x_max = p(0);
+        if (p(1) < y_min) y_min = p(1);
+        if (p(1) > y_max) y_max = p(1);
+    }
+    // estimate voxel size, assume points are even distributed
+    double vs = 2 * std::sqrt((x_max - x_min) * (y_max - y_min) / double(points.size()));
+    // set voxelgrid a little larger than bounding box of points
+    double grid_x_min = x_min - (x_max - x_min) * 0.1;
+    double grid_y_min = y_min - (y_max - y_min) * 0.1;
+    double grid_x_max = x_max + (x_max - x_min) * 0.1;
+    double grid_y_max = y_max + (y_max - y_min) * 0.1;
+    size_t rows = MAX(1, static_cast<size_t>((grid_y_max - grid_y_min) / vs));
+    size_t cols = MAX(1, static_cast<size_t>((grid_x_max - grid_x_min) / vs));
+    // cv points
+    std::vector<cv::Point2d> pts_cv(points.size());
+    std::transform(points.begin(), points.end(), pts_cv.begin(), [](Eigen::Vector2d const& p) { return cv::Point2d{ p(0), p(1) }; });
+    // voxel grid
+    auto vg = M_MATH::VoxelGrid<double>(rows, cols, vs, vs);
+    auto img = vg.CreateImg(pts_cv, true, cv::Point2d{ grid_x_min, grid_y_min });
+    std::cout << "voxel grid img size: " << img.size << std::endl;
+    // find contours
+    cv::threshold(img, img, 127, 255, 0);
+    std::vector<std::vector<cv::Point>> idx_contours;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::findContours(img, idx_contours, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
+    // assign result
+    std::vector<std::vector<Eigen::Vector2d>> contours;
+    for (auto i = 0; i < idx_contours.size(); i++) {
+        std::vector<Eigen::Vector2d> tmp;
+        if (idx_contours[i].size() < min_contour_points_num) continue;
+        for (auto j = 0; j < idx_contours[i].size(); j++) {
+            auto p_idx = idx_contours[i][j];
+            tmp.emplace_back(static_cast<double>(p_idx.x * vs + grid_x_min + vs / 2),
+                             static_cast<double>(p_idx.y * vs + grid_y_min + vs / 2));
+        }
+        contours.push_back(tmp);
+    }
+    return contours;
+}
+
 int main(int argc, char* argv[]) {
     assert(argc == 3);  // argv[1]: mesh_file path, argv[2]: z cross section threshold for volume computation
     auto mesh_file_path = std::string(argv[1]);
@@ -100,7 +152,7 @@ int main(int argc, char* argv[]) {
         M_MATH::MeshCut(*mesh, plane_center, plane_normal, l_mesh, r_mesh, r_tmp_mesh_intersected_pt_indices);
     }
 
-    printf("r_tmp_mesh_intersected_pt_indices size: %lu\n", r_tmp_mesh_intersected_pt_indices.size());
+    printf("r_tmp_mesh_intersected_pt_indices size: %zu\n", r_tmp_mesh_intersected_pt_indices.size());
 
     std::vector<Eigen::Vector3d> intersected_pts(r_tmp_mesh_intersected_pt_indices.size());
     std::transform(r_tmp_mesh_intersected_pt_indices.begin(), r_tmp_mesh_intersected_pt_indices.end(), intersected_pts.begin(), [&](size_t idx) { return r_mesh.vertices_[idx]; });
@@ -112,7 +164,7 @@ int main(int argc, char* argv[]) {
         TIME_BLOCK("- convex hull: ");
         convex_hull = ConvexHull(intersected_pts_2d);
     }
-    printf("intersected polygon convex hull points size: %lu\n", convex_hull.size());
+    printf("intersected polygon convex hull points size: %zu\n", convex_hull.size());
     printf("intersected polygon convex hull plane area: %f\n", PolygonArea(convex_hull));
 
     std::vector<Eigen::Vector2d> concave_hull;
@@ -120,18 +172,44 @@ int main(int argc, char* argv[]) {
         TIME_BLOCK("- concave hull: ");
         concave_hull = ConcaveHull(intersected_pts_2d);
     }
-    printf("intersected polygon concave hull points size: %lu\n", concave_hull.size());
+    printf("intersected polygon concave hull points size: %zu\n", concave_hull.size());
     printf("intersected polygon concave hull plane area: %f\n", PolygonArea(concave_hull));
+
+    std::vector<std::vector<Eigen::Vector2d>> contours;
+    {
+        TIME_BLOCK("- contours: ");
+        //contours = Contours(intersected_pts_2d, 20);
+        // find contour concave hull
+        auto _contours = Contours(intersected_pts_2d, 20);
+        contours.resize(_contours.size());
+        std::transform(_contours.begin(), _contours.end(), contours.begin(), [](std::vector<Eigen::Vector2d> const& c) { return ConcaveHull(c); });
+    }
+    printf("intersected polygon contours size: %zu\n", contours.size());
+    // simply sum up all contours' area
+    auto area = std::accumulate(contours.begin(), contours.end(), 0.0, [](double s, std::vector<Eigen::Vector2d> const& pts) { return s + PolygonArea(pts); });
+    printf("intersected polygon contours plane area: %f\n", area);
 
     std::vector<Eigen::Vector3d> convex_hull_pts(convex_hull.size()), concave_hull_pts(concave_hull.size());
     std::transform(convex_hull.begin(), convex_hull.end(), convex_hull_pts.begin(), [=](Eigen::Vector2d const& p) { return Eigen::Vector3d(p(0), p(1), height); });
     std::transform(concave_hull.begin(), concave_hull.end(), concave_hull_pts.begin(), [=](Eigen::Vector2d const& p) { return Eigen::Vector3d(p(0), p(1), height); });
+    std::vector<std::vector<Eigen::Vector3d>> contours_pts;
+    for (auto const& v : contours) {
+        std::vector<Eigen::Vector3d> cpts;
+        cpts.clear();
+        for (auto const& p : v) cpts.emplace_back(p(0), p(1), height);
+        contours_pts.push_back(cpts);
+    }
     auto convex_hull_pcd = std::make_shared<open3d::geometry::PointCloud>(convex_hull_pts);
     auto concave_hull_pcd = std::make_shared<open3d::geometry::PointCloud>(concave_hull_pts);
     convex_hull_pcd->PaintUniformColor({1, 0, 0});
     concave_hull_pcd->PaintUniformColor({0, 1, 0});
+    auto contours_pcds = std::vector<std::shared_ptr<open3d::geometry::PointCloud>>(contours_pts.size());
+    std::transform(contours_pts.begin(), contours_pts.end(), contours_pcds.begin(), [](std::vector<Eigen::Vector3d> const& ps) { return std::make_shared<open3d::geometry::PointCloud>(ps); });
+    std::for_each(contours_pcds.begin(), contours_pcds.end(), [](std::shared_ptr<open3d::geometry::PointCloud> pcd) { pcd->PaintUniformColor({ 0, 0, 1 }); });
+    std::vector<std::shared_ptr<const open3d::geometry::Geometry>> v_pcds(contours_pcds.begin(), contours_pcds.end()); v_pcds.push_back(convex_hull_pcd);
     open3d::visualization::DrawGeometries({ convex_hull_pcd }, "intersected plane convex", 1920, 1080);
-    open3d::visualization::DrawGeometries({ concave_hull_pcd }, "intersected plane concave", 1920, 1080);
+    open3d::visualization::DrawGeometries({ convex_hull_pcd, concave_hull_pcd }, "intersected plane concave", 1920, 1080);
+    open3d::visualization::DrawGeometries(v_pcds, "intersected plane contours", 1920, 1080);
 
     /*
     std::vector<size_t> indices;
