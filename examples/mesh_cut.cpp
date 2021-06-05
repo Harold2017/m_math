@@ -11,7 +11,6 @@
 
 #include "m_voxelgrid2d.h"
 
-/*
 #include "earcut.hpp"
 
 namespace mapbox {
@@ -30,7 +29,6 @@ namespace mapbox {
         };
     }
 }
-*/
 
 // https://www.wikiwand.com/en/Polygon
 // not self-intersecting
@@ -206,10 +204,30 @@ int main(int argc, char* argv[]) {
     auto contours_pcds = std::vector<std::shared_ptr<open3d::geometry::PointCloud>>(contours_pts.size());
     std::transform(contours_pts.begin(), contours_pts.end(), contours_pcds.begin(), [](std::vector<Eigen::Vector3d> const& ps) { return std::make_shared<open3d::geometry::PointCloud>(ps); });
     std::for_each(contours_pcds.begin(), contours_pcds.end(), [](std::shared_ptr<open3d::geometry::PointCloud> pcd) { pcd->PaintUniformColor({ 0, 0, 1 }); });
-    std::vector<std::shared_ptr<const open3d::geometry::Geometry>> v_pcds(contours_pcds.begin(), contours_pcds.end()); v_pcds.push_back(convex_hull_pcd);
+    std::vector<std::shared_ptr<const open3d::geometry::Geometry>> v_pcds(contours_pcds.begin(), contours_pcds.end()); v_pcds.push_back(concave_hull_pcd);
     open3d::visualization::DrawGeometries({ convex_hull_pcd }, "intersected plane convex", 1920, 1080);
     open3d::visualization::DrawGeometries({ convex_hull_pcd, concave_hull_pcd }, "intersected plane concave", 1920, 1080);
     open3d::visualization::DrawGeometries(v_pcds, "intersected plane contours", 1920, 1080);
+
+    // triangulate contours
+    std::vector<std::vector<std::vector<Eigen::Vector2d>>> polygons(contours.size());
+    std::transform(contours.begin(), contours.end(), polygons.begin(), [](std::vector<Eigen::Vector2d> const& c) { return std::vector<std::vector<Eigen::Vector2d>>{ c }; });
+    std::vector<std::vector<size_t>> indices(polygons.size());
+    {
+        TIME_BLOCK("- contours triangulation: ");
+        std::transform(polygons.begin(), polygons.end(), indices.begin(), [](std::vector<std::vector<Eigen::Vector2d>> const& p) { return mapbox::earcut<size_t>(p); });
+    }
+    std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> plane_meshes(indices.size());
+    for (auto i = 0; i < indices.size(); i++) {
+        std::vector<Eigen::Vector3i> triangles;
+        triangles.clear();
+        triangles.reserve(indices[i].size() / 3);
+        for (auto j = 0; j < indices[i].size(); j+=3)
+            triangles.emplace_back(indices[i][j], indices[i][j + 1], indices[i][j + 2]);
+        plane_meshes[i] = std::make_shared<open3d::geometry::TriangleMesh>(contours_pts[i], triangles);
+    }
+    std::vector<std::shared_ptr<const open3d::geometry::Geometry>> v_plane_meshes(plane_meshes.begin(), plane_meshes.end()); v_plane_meshes.push_back(concave_hull_pcd);
+    open3d::visualization::DrawGeometries(v_plane_meshes, "contours plane mesh", 1920, 1080);
 
     /*
     std::vector<size_t> indices;
