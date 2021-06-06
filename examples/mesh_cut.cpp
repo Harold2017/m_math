@@ -13,6 +13,8 @@
 
 #include "earcut.hpp"
 
+//#include <fstream>
+
 namespace mapbox {
     namespace util {
         template <>
@@ -30,6 +32,7 @@ namespace mapbox {
     }
 }
 
+
 // https://www.wikiwand.com/en/Polygon
 // not self-intersecting
 double PolygonArea(std::vector<Eigen::Vector2d> const& polygon_pts, bool isClosed = false) {
@@ -46,6 +49,7 @@ double PolygonArea(std::vector<Eigen::Vector2d> const& polygon_pts, bool isClose
     return abs(res) / 2.0;
 }
 
+
 // find convex hull of polygon
 std::vector<Eigen::Vector2d> ConvexHull(std::vector<Eigen::Vector2d> const& polygon_pts) {
     std::vector<cv::Point2d> pts(polygon_pts.size());
@@ -58,6 +62,7 @@ std::vector<Eigen::Vector2d> ConvexHull(std::vector<Eigen::Vector2d> const& poly
     std::transform(indices.begin(), indices.end(), res.begin(), [&](int idx) { return polygon_pts[idx]; });
     return res;
 }
+
 
 // concave hull
 std::vector<Eigen::Vector2d> ConcaveHull(std::vector<Eigen::Vector2d> const& polygon_pts) {
@@ -77,15 +82,15 @@ std::vector<Eigen::Vector2d> ConcaveHull(std::vector<Eigen::Vector2d> const& pol
     return res;
 }
 
-// contour
-std::vector<std::vector<Eigen::Vector2d>> Contours(std::vector<Eigen::Vector2d> const& points, size_t min_contour_points_num = 20) {
+
+// get voxel grid and contours
+std::pair<M_MATH::VoxelGrid<double>, std::vector<std::vector<cv::Point>>> voxelization_to_find_contours(std::vector<Eigen::Vector2d> const& points) {
     // find four extreme points
     double x_min = points[0](0);
     double x_max = points[0](0);
     double y_min = points[0](1);
     double y_max = points[0](1);
-    for (auto i = 0; i < points.size(); i++) {
-        auto p = points[i];
+    for (auto const& p : points) {
         if (p(0) < x_min) x_min = p(0);
         if (p(0) > x_max) x_max = p(0);
         if (p(1) < y_min) y_min = p(1);
@@ -112,19 +117,64 @@ std::vector<std::vector<Eigen::Vector2d>> Contours(std::vector<Eigen::Vector2d> 
     std::vector<std::vector<cv::Point>> idx_contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(img, idx_contours, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
-    // assign result
+    return std::make_pair(std::move(vg), std::move(idx_contours));
+}
+
+// mapping voxel (pixel) index to point by offset (one voxel to one point)
+std::vector<std::vector<Eigen::Vector2d>> mapping_voxel_idx_to_pt(std::vector<std::vector<cv::Point>> const& idx_contours, M_MATH::VoxelGrid<double> const& vg, size_t min_contour_points_num) {
     std::vector<std::vector<Eigen::Vector2d>> contours;
+    auto vx = vg.m_vx;
+    auto vy = vg.m_vy;
+    auto ox = vg.m_origin.x;
+    auto oy = vg.m_origin.y;
     for (auto i = 0; i < idx_contours.size(); i++) {
         std::vector<Eigen::Vector2d> tmp;
         if (idx_contours[i].size() < min_contour_points_num) continue;
         for (auto j = 0; j < idx_contours[i].size(); j++) {
             auto p_idx = idx_contours[i][j];
-            tmp.emplace_back(static_cast<double>(p_idx.x * vs + grid_x_min + vs / 2),
-                             static_cast<double>(p_idx.y * vs + grid_y_min + vs / 2));
+            tmp.emplace_back(static_cast<double>(p_idx.x * vx + ox + vx / 2),
+                             static_cast<double>(p_idx.y * vy + oy + vy / 2));
         }
         contours.push_back(tmp);
     }
     return contours;
+}
+
+// mapping voxel (pixel) index to point by grid point ids (one voxel to its point ids)
+std::vector<std::vector<size_t>> mapping_voxel_idx_to_pt_ids(std::vector<std::vector<cv::Point>> const& idx_contours, M_MATH::VoxelGrid<double> const& vg, size_t min_contour_points_num = 20) {
+    std::vector<std::vector<size_t>> pt_ids;
+    auto const& voxels = vg.m_voxels;
+    for (auto i = 0; i < idx_contours.size(); i++) {
+        std::vector<size_t> tmp;
+        if (idx_contours[i].size() < min_contour_points_num) continue;
+        for (auto j = 0; j < idx_contours[i].size(); j++) {
+            auto p_idx = idx_contours[i][j];
+            for (auto s : voxels[p_idx.y][p_idx.x].m_pt_ids)  // notice: voxle[y][x] here
+                tmp.push_back(s);
+        }
+        pt_ids.push_back(tmp);
+    }
+    return pt_ids;
+}
+
+// contour
+std::vector<std::vector<Eigen::Vector2d>> Contours(std::vector<Eigen::Vector2d> const& points, size_t min_contour_points_num = 20) {
+    auto pair = voxelization_to_find_contours(points);
+    return mapping_voxel_idx_to_pt(pair.second, pair.first, min_contour_points_num);
+}
+// contour of point ids
+std::vector<std::vector<size_t>> Contours_pt_ids(std::vector<Eigen::Vector2d> const& points, size_t min_contour_points_num = 20) {
+    auto pair = voxelization_to_find_contours(points);
+    return mapping_voxel_idx_to_pt_ids(pair.second, pair.first, min_contour_points_num);
+}
+
+std::vector<Eigen::Vector3i> PolygonTriangulation(std::vector<Eigen::Vector2d> const& pts) {
+    auto indices = mapbox::earcut<size_t>(std::vector<std::vector<Eigen::Vector2d>>{ pts });
+    std::vector<Eigen::Vector3i> triangles;
+    triangles.reserve(indices.size() / 3);
+    for (auto i = 0; i < indices.size(); i += 3)
+        triangles.emplace_back(indices[i], indices[i + 1], indices[i + 2]);
+    return triangles;
 }
 
 int main(int argc, char* argv[]) {
@@ -152,10 +202,9 @@ int main(int argc, char* argv[]) {
 
     printf("r_tmp_mesh_intersected_pt_indices size: %zu\n", r_tmp_mesh_intersected_pt_indices.size());
 
-    std::vector<Eigen::Vector3d> intersected_pts(r_tmp_mesh_intersected_pt_indices.size());
-    std::transform(r_tmp_mesh_intersected_pt_indices.begin(), r_tmp_mesh_intersected_pt_indices.end(), intersected_pts.begin(), [&](size_t idx) { return r_mesh.vertices_[idx]; });
     std::vector<Eigen::Vector2d> intersected_pts_2d(r_tmp_mesh_intersected_pt_indices.size());
     std::transform(r_tmp_mesh_intersected_pt_indices.begin(), r_tmp_mesh_intersected_pt_indices.end(), intersected_pts_2d.begin(), [&](size_t idx) { return Eigen::Vector2d{r_mesh.vertices_[idx].x(), r_mesh.vertices_[idx].y()}; });
+
 
     std::vector<Eigen::Vector2d> convex_hull;
     {
@@ -173,6 +222,22 @@ int main(int argc, char* argv[]) {
     printf("intersected polygon concave hull points size: %zu\n", concave_hull.size());
     printf("intersected polygon concave hull plane area: %f\n", PolygonArea(concave_hull));
 
+    ///*
+    // contours with point ids
+    std::vector<std::vector<size_t>> contours_pt_ids;
+    {
+        TIME_BLOCK("- contours with point ids: ");
+        contours_pt_ids = Contours_pt_ids(intersected_pts_2d, 20);
+    }
+    // notice: contours and contours_pt_ids are not 1 to 1 indexing
+    std::vector<std::vector<Eigen::Vector2d>> contours(contours_pt_ids.size());
+    std::transform(contours_pt_ids.begin(), contours_pt_ids.end(), contours.begin(),
+        [&](std::vector<size_t> const& pt_ids) {
+            std::vector<Eigen::Vector2d> pts(pt_ids.size());
+            std::transform(pt_ids.begin(), pt_ids.end(), pts.begin(), [&](size_t id) { return intersected_pts_2d[id]; });
+            return ConcaveHull(pts); });  // compute concave hull here to ensure earcut mesh quality
+    //*/
+    /*
     std::vector<std::vector<Eigen::Vector2d>> contours;
     {
         TIME_BLOCK("- contours: ");
@@ -182,6 +247,7 @@ int main(int argc, char* argv[]) {
         contours.resize(_contours.size());
         std::transform(_contours.begin(), _contours.end(), contours.begin(), [](std::vector<Eigen::Vector2d> const& c) { return ConcaveHull(c); });
     }
+    */
     printf("intersected polygon contours size: %zu\n", contours.size());
     // simply sum up all contours' area
     auto area = std::accumulate(contours.begin(), contours.end(), 0.0, [](double s, std::vector<Eigen::Vector2d> const& pts) { return s + PolygonArea(pts); });
@@ -210,24 +276,55 @@ int main(int argc, char* argv[]) {
     open3d::visualization::DrawGeometries(v_pcds, "intersected plane contours", 1920, 1080);
 
     // triangulate contours
-    std::vector<std::vector<std::vector<Eigen::Vector2d>>> polygons(contours.size());
-    std::transform(contours.begin(), contours.end(), polygons.begin(), [](std::vector<Eigen::Vector2d> const& c) { return std::vector<std::vector<Eigen::Vector2d>>{ c }; });
-    std::vector<std::vector<size_t>> indices(polygons.size());
+    std::vector<std::vector<Eigen::Vector3i>> triangles(contours.size());
     {
         TIME_BLOCK("- contours triangulation: ");
-        std::transform(polygons.begin(), polygons.end(), indices.begin(), [](std::vector<std::vector<Eigen::Vector2d>> const& p) { return mapbox::earcut<size_t>(p); });
+        std::transform(contours.begin(), contours.end(), triangles.begin(), [](std::vector<Eigen::Vector2d> const& c) { return PolygonTriangulation(c); });
     }
-    std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> plane_meshes(indices.size());
-    for (auto i = 0; i < indices.size(); i++) {
-        std::vector<Eigen::Vector3i> triangles;
-        triangles.clear();
-        triangles.reserve(indices[i].size() / 3);
-        for (auto j = 0; j < indices[i].size(); j+=3)
-            triangles.emplace_back(indices[i][j], indices[i][j + 1], indices[i][j + 2]);
-        plane_meshes[i] = std::make_shared<open3d::geometry::TriangleMesh>(contours_pts[i], triangles);
-    }
+    std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> plane_meshes(triangles.size());
+    std::transform(triangles.begin(), triangles.end(), contours_pts.begin(), plane_meshes.begin(), [](std::vector<Eigen::Vector3i> const& tris, std::vector<Eigen::Vector3d> const& verts) { return std::make_shared<open3d::geometry::TriangleMesh>(verts, tris); });
+    double contours_mesh_area = std::accumulate(plane_meshes.begin(), plane_meshes.end(), 0.0, [](double s, std::shared_ptr<open3d::geometry::TriangleMesh> const& mesh) { return s + mesh->GetSurfaceArea(); });
+    std::cout << "contours mesh area: " << contours_mesh_area << std::endl;
     std::vector<std::shared_ptr<const open3d::geometry::Geometry>> v_plane_meshes(plane_meshes.begin(), plane_meshes.end()); v_plane_meshes.push_back(concave_hull_pcd);
     open3d::visualization::DrawGeometries(v_plane_meshes, "contours plane mesh", 1920, 1080);
+
+    // plot contours plane mesh with r_mesh
+    auto p_r_mesh = std::make_shared<open3d::geometry::TriangleMesh>(std::move(r_mesh));
+    v_plane_meshes.pop_back();
+    v_plane_meshes.push_back(p_r_mesh);
+    open3d::visualization::DrawGeometries({ v_plane_meshes }, "contours plane mesh + r_mesh", 1920, 1080);
+
+    /*
+    // combine contours mesh with r_mesh
+    // contour pt ids mapping to intersected pt indices
+    // FIXME: contours and contours_pt_ids are not 1 to 1 indexing due to contours are computed with ConcaveHull, so the result is incorrect; since earcut not return indices, need a hash map? 
+    std::vector<std::vector<size_t>> contours_indices(contours_pt_ids.size());
+    std::transform(contours_pt_ids.begin(), contours_pt_ids.end(), contours_indices.begin(), [&](std::vector<size_t> const& vi) { 
+        std::vector<size_t> tmp(vi.size());
+        std::transform(vi.begin(), vi.end(), tmp.begin(), [&](size_t index) { return r_tmp_mesh_intersected_pt_indices[index]; });
+        return tmp; });
+    //std::ofstream of1("contours_indices.txt");
+    //std::for_each(contours_indices.begin(), contours_indices.end(), [&](std::vector<size_t> const& tmp) { std::copy(tmp.rbegin(), tmp.rend(), std::ostream_iterator<size_t>(of1, "\n")); });
+    //of1.close();
+    
+    // triangles mapping to contours indices
+    std::vector<Eigen::Vector3i> contours_triangles;
+    contours_triangles.reserve(contours_indices[0].size());
+    for (auto i = 0; i < contours_indices.size(); i++) {
+        for (auto j = 0; j < contours_indices[i].size(); j += 3)
+            if (int(contours_indices[i][j]) >= 0 && int(contours_indices[i][j + 1]) >= 0 && int(contours_indices[i][j + 2]) >= 0)  // may overflow
+                contours_triangles.emplace_back(contours_indices[i][j], contours_indices[i][j + 1], contours_indices[i][j + 2]);
+            else continue;
+    }
+    //std::ofstream of2("contours_triangles.txt");
+    //std::copy(contours_triangles.rbegin(), contours_triangles.rend(), std::ostream_iterator<Eigen::Vector3i>(of2, "\n"));
+    //of2.close();
+
+    auto p_r_mesh = std::make_shared<open3d::geometry::TriangleMesh>(std::move(r_mesh));
+    p_r_mesh->triangles_.insert(r_mesh.triangles_.end(), contours_triangles.begin(), contours_triangles.end());
+    open3d::visualization::DrawGeometries({ p_r_mesh }, "r_mesh", 1920, 1080);
+    */
+
 
     /*
     std::vector<size_t> indices;

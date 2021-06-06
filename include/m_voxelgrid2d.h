@@ -23,11 +23,13 @@ namespace M_MATH {
 
 	public:
 		VoxelGrid(size_t rows, size_t cols, T vx, T vy);
+		VoxelGrid(VoxelGrid const& other) = delete;
+		VoxelGrid(VoxelGrid&& other);
 		~VoxelGrid() = default;
 
 		cv::Mat CreateImg(std::vector<cv::Point_<T>> const& pts, bool is_binary, cv::Point_<T> const& origin);
 
-	private:
+	public:
 		std::vector<std::vector<Voxel<T>>> m_voxels;
 		size_t m_rows, m_cols;
 		T m_vx, m_vy;
@@ -40,6 +42,15 @@ namespace M_MATH {
 		assert(rows > 1 && cols > 1 && vx > 0 && vy > 0);
 		m_voxels = std::vector<std::vector<Voxel<T>>>(m_rows, std::vector<Voxel<T>>(m_cols));
 	}
+
+	template<typename T>
+	VoxelGrid<T>::VoxelGrid(VoxelGrid&& other) 
+		: m_rows(other.m_rows), 
+		  m_cols(other.m_cols), 
+		  m_vx(other.m_vx), 
+		  m_vy(other.m_vy), 
+		  m_origin(std::move(other.m_origin)),
+	      m_voxels(std::move(other.m_voxels)) { }
 
 	template<typename T>
 	cv::Mat VoxelGrid<T>::CreateImg(std::vector<cv::Point_<T>> const& pts, bool is_binary, cv::Point_<T> const& origin) {
