@@ -34,7 +34,7 @@ namespace mapbox {
 namespace M_MATH {
     namespace details {
         // contour of point ids
-        std::vector<std::vector<size_t>> Contours(std::vector<cv::Point2d> const& points, size_t min_contour_points_num = 20) {
+        std::vector<std::vector<size_t>> Contours(std::vector<cv::Point2d> const& points, double voxel_size = 0.0, size_t min_contour_points_num = 20) {
             // find four extreme points
             double x_min = points[0].x;
             double x_max = points[0].x;
@@ -47,7 +47,7 @@ namespace M_MATH {
                 if (p.y > y_max) y_max = p.y;
             }
             // estimate voxel size, assume points are even distributed
-            double vs = 2 * std::sqrt((x_max - x_min) * (y_max - y_min) / double(points.size()));
+            double vs = voxel_size > 0.0 ? voxel_size : 2 * std::sqrt((x_max - x_min) * (y_max - y_min) / double(points.size()));
             // set voxelgrid a little larger than bounding box of points
             double grid_x_min = x_min - (x_max - x_min) * 0.1;
             double grid_y_min = y_min - (y_max - y_min) * 0.1;
@@ -65,9 +65,14 @@ namespace M_MATH {
             ///\note here only find the outer contours
             // TODO: according to contour hierarchy, find nested contours and find a way to make a ring-like mesh
             cv::findContours(img, idx_contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
+            // filter out closed contours
+            std::vector<size_t> filtered_contours_indices;
+            for (auto i = 0; i < idx_contours.size(); i++)
+                if (cv::contourArea(idx_contours[i]) <= cv::arcLength(idx_contours[i], true)) continue; // open contour (area <= perimeter)
+                else filtered_contours_indices.push_back(i);  // closed contour
             // find pt ids
             std::vector<std::vector<size_t>> pt_ids;
-            for (auto i = 0; i < idx_contours.size(); i++) {
+            for (auto i : filtered_contours_indices) {
                 std::vector<size_t> tmp;
                 if (idx_contours[i].size() < min_contour_points_num) continue;
                 for (auto j = 0; j < idx_contours[i].size(); j++) {
@@ -107,11 +112,11 @@ namespace M_MATH {
     }
 
     // plane points to contour polygon mesh (parallel to XOY plane, namely normal direction is Z direction)
-    std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> PlanePointsToContourPolygonMesh(std::vector<Eigen::Vector3d> const& plane_pts, size_t min_contour_points_num = 20) {
+    std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> PlanePointsToContourPolygonMesh(std::vector<Eigen::Vector3d> const& plane_pts, double voxel_size = 0.0, size_t min_contour_points_num = 20) {
         auto height = plane_pts[0](2);
         std::vector<cv::Point2d> cv_pts(plane_pts.size());
         std::transform(plane_pts.begin(), plane_pts.end(), cv_pts.begin(), [](Eigen::Vector3d const& p) { return cv::Point2d{ p(0), p(1) }; });
-        std::vector<std::vector<size_t>> contours_pt_ids = details::Contours(cv_pts, min_contour_points_num);
+        std::vector<std::vector<size_t>> contours_pt_ids = details::Contours(cv_pts, voxel_size, min_contour_points_num);
 
         std::vector<std::vector<cv::Point2d>> contours;
         contours.reserve(contours_pt_ids.size());

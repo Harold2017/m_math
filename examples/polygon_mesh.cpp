@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::shared_ptr<open3d::geometry::TriangleMesh>> polygon_meshes;
     {
         TIME_BLOCK("- contour polygon mesh: ");
-        polygon_meshes = M_MATH::PlanePointsToContourPolygonMesh(intersected_pts, 20);
+        polygon_meshes = M_MATH::PlanePointsToContourPolygonMesh(intersected_pts, 0.0, 20);
     }
     std::vector<std::shared_ptr<const open3d::geometry::Geometry>> v_polygon_meshes(polygon_meshes.begin(), polygon_meshes.end());
     open3d::visualization::DrawGeometries(v_polygon_meshes, "contours polygon mesh", 1920, 1080);

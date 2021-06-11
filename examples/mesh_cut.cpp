@@ -115,9 +115,14 @@ std::pair<M_MATH::VoxelGrid<double>, std::vector<std::vector<cv::Point>>> voxeli
     // find contours
     cv::threshold(img, img, 127, 255, 0);
     std::vector<std::vector<cv::Point>> idx_contours;
-    std::vector<cv::Vec4i> hierarchy;
-    cv::findContours(img, idx_contours, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
-    return std::make_pair(std::move(vg), std::move(idx_contours));
+    ///\note only consider the outer contours here
+    cv::findContours(img, idx_contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
+    // filter out closed contours
+    std::vector<std::vector<cv::Point>> filtered_contours;
+    for (auto i = 0; i < idx_contours.size(); i++)
+        if (cv::contourArea(idx_contours[i]) <= cv::arcLength(idx_contours[i], true)) continue; // open contour (area <= perimeter)
+        else filtered_contours.push_back(idx_contours[i]);  // closed contour
+    return std::make_pair(std::move(vg), std::move(filtered_contours));
 }
 
 // mapping voxel (pixel) index to point by offset (one voxel to one point)
