@@ -9,7 +9,10 @@
 
 int main() {
     cv::Mat img(600, 600, CV_8UC1, cv::Scalar());
+    cv::line(img, { 50, 50 }, { 70, 70 }, CV_RGB(255, 255, 255), 1);
     cv::rectangle(img, { 100, 100 }, {500, 500}, CV_RGB(255, 255, 255), 1);
+    cv::circle(img, { 550, 550 }, 10, CV_RGB(255, 255, 255), 1);
+    cv::circle(img, { 50, 300 }, 10, CV_RGB(255, 255, 255), 1);
     cv::rectangle(img, { 200, 200 }, { 300, 300 }, CV_RGB(255, 255, 255), 1);
     cv::rectangle(img, { 350, 350 }, { 400, 400 }, CV_RGB(255, 255, 255), 1);
     cv::circle(img, { 250, 250 }, 20, CV_RGB(255, 255, 255), 1);
@@ -39,8 +42,8 @@ int main() {
         // filter out closed contours
         if (hierarchy[i][2] < 0) continue;  // open contours (has no child)
         else {  // closed contours
+            filtered_contours_indices[i] = std::vector<size_t>();
             if (hierarchy[hierarchy[i][2]][2] >= 0) {  // closed contour and has grand closed contours
-                filtered_contours_indices[i] = std::vector<size_t>();
                 auto grandson_index = hierarchy[hierarchy[i][2]][2];
                 filtered_contours_indices[i].push_back(grandson_index);
                 auto next_grandson_index = hierarchy[hierarchy[hierarchy[i][2]][2]][0];
@@ -61,13 +64,35 @@ int main() {
     std::cout << std::endl;
 
     // compute area between contours
-    double area = cv::contourArea(contours[filtered_contours_indices.begin()->first]);
-    int sign = -1;
-    for (auto const& e : filtered_contours_indices) {
-        for (auto x : e.second) area += sign * cv::contourArea(contours[x]);
-        sign *= -1;
+    std::vector<bool> computed(filtered_contours_indices.size(), false);
+    double area = 0.0;
+    std::cout << "area computation:\n";
+    for (auto it = filtered_contours_indices.cbegin(); it != filtered_contours_indices.cend();) {
+        if (computed[it->first])
+            it = filtered_contours_indices.erase(it);
+        else {
+            area += cv::contourArea(contours[it->first]);
+            computed[it->first] = true;
+            std::cout << "\t+ " << it->first << '\n';
+            for (auto i : it->second) {
+                area -= cv::contourArea(contours[i]);
+                computed[i] = true;
+                std::cout << "\t- " << i << '\n';
+            }
+            ++it;
+        }
     }
+    std::cout << std::endl;
     std::cout << "area: " << area << std::endl;
+
+    std::cout << "filtered_contours_indices\n";
+    for (auto const& e : filtered_contours_indices) {
+        std::cout << e.first << ": ";
+        for (auto x : e.second)
+            std::cout << x << " ";
+        std::cout << '\n';
+    }
+    std::cout << std::endl;
 
     return 0;
 }

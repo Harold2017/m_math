@@ -23,6 +23,8 @@ int main(int argc, char* argv[]) {
 
     auto contour = contours[contours.size()-1];
 
+    // notice: for following functions, use cv::Point or cv::Point2f
+    // e.g. cv::arcLength has internal check for input type and only supports CV_32F or CV_32S
     // perimeter
     std::cout << cv::arcLength(contour, true) << std::endl;
 
