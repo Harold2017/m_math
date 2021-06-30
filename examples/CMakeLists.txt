@@ -67,6 +67,7 @@ addExample(m_convex_hull convex_hull.cpp ${OpenCV_LIBS})
 addExample(m_polygon_mesh polygon_mesh.cpp ${OpenCV_LIBS} ${Open3D_LIBRARIES})
 addExample(m_mesh_cut_1 mesh_cut_1.cpp ${OpenCV_LIBS} ${Open3D_LIBRARIES})
 addExample(m_area_auto_covariance area_auto_covariance.cpp ${OpenCV_LIBS})
+addExample(m_watershed watershed.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (NOT USE_OPEN3D AND APPLE)
