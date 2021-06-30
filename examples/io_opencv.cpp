@@ -5,15 +5,18 @@
 #include "m_io_opencv.h"
 #include "m_opencv_utils.h"
 
+#include <iostream>
+
 using namespace M_MATH;
 
 int main() {
-    int N = 100;
+    int N = 50;
     std::vector<float> vz;
     vz.reserve(N);
     for (auto i = 0; i < N; ++i)
         vz.emplace_back(i);
-    auto mat = ToMat(10, 10, vz.data());
+    auto mat = ToMatCopy(5, 10, vz);
+    std::cout << mat << std::endl;
 
     std::string filename = "mat.yaml";
     std::string matName = "mat";

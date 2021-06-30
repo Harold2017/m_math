@@ -40,6 +40,13 @@ namespace M_MATH {
         return out;
     }
 
+    template<typename T>
+    inline cv::Mat ToMatCopy(size_t rows, size_t cols, std::vector<T> const& vec) {
+        cv::Mat_<T> res(rows, cols);
+        memcpy(res.data, vec.data(), vec.size() * sizeof(T));
+        return res;
+    }
+
     inline void ToVec(cv::Mat const& in, std::vector<float> & out) {
         if (in.isContinuous()) {
             // array.assign((float*)mat.datastart, (float*)mat.dataend); // <- has problems for sub-matrix like mat = big_mat.row(i)

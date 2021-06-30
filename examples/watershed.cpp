@@ -13,12 +13,12 @@ using namespace cv;
 
 Vec3b RandomColor(int value)  //generate random color
 {
-	value=value%255;  //0-255
+	value=value % 255;  //0-255
 	RNG rng;
-	int aa=rng.uniform(0,value);
-	int bb=rng.uniform(0,value);
-	int cc=rng.uniform(0,value);
-	return Vec3b(aa,bb,cc);
+	int aa = rng.uniform(0, value);
+	int bb = rng.uniform(0, value);
+	int cc = rng.uniform(0, value);
+	return Vec3b(aa, bb, cc);
 }
 
 int main() {
@@ -36,7 +36,7 @@ int main() {
     imshow("Edges", I); 
 
 
-    Mat marks(I.size(),CV_32S);  // markers for watershed algo
+    Mat marks(I.size(), CV_32S);  // markers for watershed algo
 	marks = Scalar::all(0);
 
 
@@ -57,6 +57,19 @@ int main() {
 	}
     imshow("Contours", imageContours);
 
+    /* get contour regions
+    std::vector<cv::Mat> subregions; subregions.reserve(contours.size());
+    for (int i = 0; i < contours.size(); i++)
+    {
+        Mat mask = Mat::zeros(I.size(), CV_8UC1);
+        drawContours(mask, contours, i, Scalar(255), FILLED);
+        Mat contourRegion;
+        Mat imageROI;
+        I.copyTo(imageROI, mask);
+        contourRegion = imageROI(boundingRect(contours[i]));
+        subregions.push_back(contourRegion);
+    }
+    */
 
     // 2. use erode and dilate to remove small parts
     morphologyEx(imageContours, imageContours, MORPH_OPEN, getStructuringElement(MorphShapes::MORPH_RECT, Size(3, 3)), Point(-1, -1), 0);
@@ -96,18 +109,14 @@ int main() {
 
 	// fill color in every region
 	Mat PerspectiveImage = Mat::zeros(I.size(), CV_8UC3);
-	for(int i = 0; i < marks.rows; i++)
-	{
-		for(int j = 0; j < marks.cols; j++)
-		{
-			int index = marks.at<int>(i,j);
-			if(marks.at<int>(i,j)==-1)
-			{
-				PerspectiveImage.at<Vec3b>(i,j) = Vec3b(255,255,255);
+	for (int i = 0; i < marks.rows; i++) {
+		for (int j = 0; j < marks.cols; j++) {
+			int index = marks.at<int>(i, j);
+			if (marks.at<int>(i, j) == -1) {
+				PerspectiveImage.at<Vec3b>(i, j) = Vec3b(255,255,255);
 			}			 
-			else
-			{
-				PerspectiveImage.at<Vec3b>(i,j) = RandomColor(index);
+			else {
+				PerspectiveImage.at<Vec3b>(i, j) = RandomColor(index);
 			}
 		}
 	}
