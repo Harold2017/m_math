@@ -121,6 +121,41 @@ namespace M_MATH {
         cv::log(MagInLog, MagInLog);
         cv::normalize(MagInLog, MagInLog, 0, 1, cv::NORM_MINMAX);
     }
+
+    void CalcPSD(const cv::Mat& src, cv::Mat& PSD, bool logflag = false)
+    {
+        // not use padding here
+        // FIXME: padding introduce white lines on ouputImg's x, y axis
+        cv::Mat planes[2] = { cv::Mat_<float>(src.clone()), cv::Mat::zeros(src.size(), CV_32F) };
+        cv::Mat complexI;
+        cv::merge(planes, 2, complexI);
+        cv::dft(complexI, complexI);
+        cv::split(complexI, planes);
+
+        // remove constant components for better visualization
+        planes[0].at<float>(0) = 0;
+        planes[1].at<float>(0) = 0;
+
+        // PSD calculation
+        cv::Mat imgPSD;
+        cv::magnitude(planes[0], planes[1], imgPSD);
+        cv::pow(imgPSD, 2, imgPSD);
+        PSD = imgPSD;
+
+        // switch PSD to logarithmic scale
+        // => log(1 + sqrt(Re(DFT(I))^2 + Im(DFT(I))^2))
+        cv::Mat imglogPSD;
+        if (logflag)
+        {
+            imglogPSD = imgPSD + cv::Scalar::all(1);
+            cv::log(imglogPSD, imglogPSD);
+            PSD = imglogPSD;
+        }
+        // crop the spectrum, if it has an odd number of rows or columns
+        PSD = PSD(cv::Rect(0, 0, PSD.cols & -2, PSD.rows & -2));
+        Rearrange(PSD, PSD);
+        cv::normalize(PSD, PSD, 0, 1, cv::NORM_MINMAX);
+    }
 }
 
 #endif //M_MATH_M_FFT_OPENCV_H

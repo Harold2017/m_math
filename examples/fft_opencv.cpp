@@ -7,9 +7,10 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-#include <vector>
-#include <utility>
 #include "m_opencv_utils.h"
+#include <fstream>
+
+#define THETA_NUM 720
 
 template<typename T>
 void print_v(std::vector<T> const& v) {
@@ -18,89 +19,202 @@ void print_v(std::vector<T> const& v) {
     std::cout << std::endl;
 }
 
-int main()
+template<typename T>
+void save_v(std::vector<T> const& v, std::string const& filename) {
+    std::ofstream outfile(filename);
+    for (auto const& e : v)
+        outfile << e << ' ';
+    outfile.close();
+}
+
+void getLinePointinImageBorder(const cv::Point& p1_in, const cv::Point& p2_in,
+                               cv::Point& p1_out, cv::Point& p2_out, 
+                               int rows, int cols) {
+    double m = (double) (p1_in.y - p2_in.y) / (double) (p1_in.x - p2_in.x + std::numeric_limits<double>::epsilon());
+    double b = p1_in.y - (m * p1_in.x);
+
+    std::vector<cv::Point> border_point;
+    double x,y;
+    //test for the line y = 0
+    y = 0;
+    x = (y-b)/m;
+    if(x > 0 && x < cols)
+        border_point.push_back(cv::Point(x,y));
+
+    //test for the line y = img.rows
+    y = rows;
+    x = (y-b)/m;
+    if(x > 0 && x < cols)
+        border_point.push_back(cv::Point(x,y));
+
+    //check intersection with horizontal lines x = 0
+    x = 0;
+    y = m * x + b;
+    if(y > 0 && y < rows)
+        border_point.push_back(cv::Point(x,y));
+
+    x = cols;
+    y = m * x + b;
+    if(y > 0 && y < rows)
+        border_point.push_back(cv::Point(x,y));
+
+    p1_out = border_point[0];
+    p2_out = border_point[1];
+}
+
+// too slow
+void radial_sum_integral(cv::Mat const& src) {
+    auto rows = src.rows;
+    auto cols = src.cols;
+    cv::Point2f center{ float(cols/2), float(rows/2) };
+    std::vector<float> Psum(THETA_NUM);
+    // Pi/THETA_NUM radian as step
+    for (unsigned s = 0; s < THETA_NUM + 1; s++) {
+        float angle = s * CV_PI / THETA_NUM;
+        for (auto i = 0; i < rows; i++)
+            for (auto j = 0; j < cols; j++) {
+                auto theta = std::atan2(float(i) - center.y, float(j) - center.x);  // radians: [0, 2Pi]
+                if (theta > CV_PI) theta -= CV_PI;
+                if (std::abs(angle - theta) < 0.01 * angle) Psum[s] += src.at<float>(i, j);
+            }
+    }
+    //print_v(Psum);
+    save_v(Psum, "./psum.txt");
+    auto angle_in_degrees = double(std::distance(Psum.begin(), std::max_element(Psum.begin(), Psum.end()))) / THETA_NUM * 180.;  // cc angle from +x
+    std::cout << "max at angle: " << angle_in_degrees << std::endl;
+}
+
+void radial_sum_integral_1(cv::Mat const& src) {
+    auto rows = src.rows;
+    auto cols = src.cols;
+    auto N = rows < cols ? rows : cols;
+    std::vector<float> Psum(THETA_NUM);
+
+    double theta;
+    cv::Point center{ cols/2, rows/2 };
+
+    // [0, Pi]
+    for (unsigned i = 0; i < THETA_NUM + 1; i++) {
+        theta = double(i) / THETA_NUM * CV_PI;
+        auto p = cv::Point2f(float(cols)/2 + float(N)/2 * std::cos(theta), float(rows)/2-float(N)/2 * std::sin(theta));
+        cv::Point p1, p2;
+        getLinePointinImageBorder(center, p, p1, p2, rows, cols);
+
+        // iterate all pixels on the line and src
+        cv::LineIterator it(src, p1, p2, 8, true);  // left-to-right
+        std::vector<float> buf(it.count);
+        for(int j = 0; j < it.count; j++, ++it)
+            buf[j] = *(const float*)*it;
+        Psum[i] = cv::sum(buf)[0];
+    }
+    auto angle_in_degrees = double(std::distance(Psum.begin(), std::max_element(Psum.begin(), Psum.end()))) / THETA_NUM * 180.;
+    save_v(Psum, "./psum.txt");
+    std::cout << "max at angle: " << angle_in_degrees << std::endl;
+}
+
+void radial_sum_integral_2(cv::Mat const& src, size_t rmin = 20, size_t rmax = 250) {
+    auto rows = src.rows;
+    auto cols = src.cols;
+    std::vector<float> Psum(THETA_NUM);
+
+    double theta;
+
+    // [0, Pi]
+    for (unsigned i = 0; i < THETA_NUM + 1; i++) {
+        theta = double(i) / THETA_NUM * CV_PI;
+        auto p1 = cv::Point2f(float(cols)/2 + float(rmin) * std::cos(theta), float(rows)/2-float(rmin) * std::sin(theta));
+        auto p2 = cv::Point2f(float(cols)/2 + float(rmax) * std::cos(theta), float(rows)/2-float(rmax) * std::sin(theta));
+
+        // iterate all pixels on the line and src
+        cv::LineIterator it(src, p1, p2, 8, true);  // left-to-right
+        std::vector<float> buf(it.count);
+        for(int j = 0; j < it.count; j++, ++it)
+            buf[j] = *(const float*)*it;
+        Psum[i] = cv::sum(buf)[0];
+    }
+    auto angle_in_degrees = double(std::distance(Psum.begin(), std::max_element(Psum.begin(), Psum.end()))) / THETA_NUM * 180.;
+    save_v(Psum, "./psum.txt");
+    std::cout << "max at angle: " << angle_in_degrees << std::endl;
+}
+
+void radial_sum_integral_2_averaged(cv::Mat const& src, size_t rmin = 20, size_t rmax = 250) {
+    auto rows = src.rows;
+    auto cols = src.cols;
+    std::vector<float> Psum(THETA_NUM);
+
+    double theta;
+
+    // [0, Pi]
+    for (unsigned i = 0; i < THETA_NUM + 1; i++) {
+        theta = double(i) / THETA_NUM * CV_PI;
+        auto p1 = cv::Point2f(float(cols)/2 + float(rmin) * std::cos(theta), float(rows)/2-float(rmin) * std::sin(theta));
+        auto p2 = cv::Point2f(float(cols)/2 + float(rmax) * std::cos(theta), float(rows)/2-float(rmax) * std::sin(theta));
+
+        // iterate all pixels on the line and src
+        cv::LineIterator it(src, p1, p2, 8, false);  // left-to-right or not
+        std::vector<float> buf(it.count);
+        for(int j = 0; j < it.count; j++, ++it)
+            buf[j] = *(const float*)*it;
+        Psum[i] = cv::mean(buf)[0];
+    }
+    auto angle_in_degrees = double(std::distance(Psum.begin(), std::max_element(Psum.begin(), Psum.end()))) / THETA_NUM * 180.;
+    save_v(Psum, "./psum.txt");
+    std::cout << "max at angle: " << angle_in_degrees << std::endl;
+}
+
+int main(int argc, char* argv[])
 {
-    /*
-    cv::Mat I = imread( cv::samples::findFile( "lena.jpg" ), cv::IMREAD_GRAYSCALE);
+    cv::Mat I = imread( cv::samples::findFile( argv[1] ), cv::IMREAD_GRAYSCALE);
     if( I.empty()){
         std::cout << "Error opening image" << std::endl;
         return EXIT_FAILURE;
     }
-    */
 
 
-    // 2d matrix as pts
-    size_t M_ = 10, N_ = 10;
-    std::vector<std::vector<float>> pts(N_, std::vector<float>(M_, 0));
-    //for (auto i = 0; i < M; ++i) {pts[1][i] = 1; pts[3][i] = 1; pts[5][i] = 1; pts[7][i] = 1; pts[9][i] = 1;}
-    //for (auto i = 0; i < M; ++i) {pts[i][1] = 1; pts[i][3] = 1; pts[i][5] = 1; pts[i][7] = 1; pts[i][9] = 1;}
-    for (auto i = 0; i < M_; ++i) pts[i][i] = 1;
-    //for (auto i = 0; i < M; ++i)
-    //    for (auto j = 0; j < N; ++j)
-    //        pts[i][j] = 1;
-    //for (auto i = 0; i < M; ++i)
-    //    for (auto j = 0; j < N; ++j)
-    //        pts[i][j] = normal_gen<float>();
-
-    std::vector<float> pts1(M_*N_);
-    for (auto i = 0; i < M_; ++i)
-        for (auto j = 0; j < N_; ++j)
-            pts1[j * M_ + i] = pts[i][j];
-
-    cv::Mat I = M_MATH::ToMat(M_, N_, pts1.data());
-
-
-    cv::Mat mag, phase;
+    cv::Mat mag, phase;  // phase in [0, 2Pi]
     //M_MATH::Spectrum_Mag_Phase(I, mag, phase);
     //M_MATH::Spectrum_MagInLog_Phase(I, mag, phase);
-    //M_MATH::Spectrum_Mag(I, mag);
-    M_MATH::Spectrum_MagInLog(I, mag);
+    M_MATH::Spectrum_Mag(I, mag);
+    //M_MATH::Spectrum_MagInLog(I, mag);
+
+    //cv::Mat mask;
+    //cv::threshold(mag, mask, 0.8, 1, cv::THRESH_BINARY_INV);
+    //cv::bitwise_and(mag, mask, mag);
+
+    //cv::Point max_mag_loc;
+    //cv::minMaxLoc(mag, nullptr, nullptr, nullptr, &max_mag_loc);
+    //auto center = cv::Point{ mag.cols/2, mag.rows/2 };
+    //std::cout << "max mag with phase: " << phase.at<float>(max_mag_loc) * 180.0 / CV_PI << " at angle: " << std::atan2(max_mag_loc.y - center.y, max_mag_loc.x - center.x) * 180.0 / CV_PI  << std::endl;
 
     //cv::imshow("Input Image", I);
-    //cv::imshow("spectrum magnitude", h_mag);
+    cv::imshow("spectrum magnitude", mag);
     //cv::imshow("phase", phase);
-    //cv::waitKey();
 
-    auto m = mag.rows;
-    auto n = mag.cols;
-    std::cout << m << ", " << n << std::endl;
-    auto N = m < n ? m : n;
-    std::cout << N << std::endl;
+    /*
+    auto rows = mag.rows;
+    auto cols = mag.cols;
+    auto center = cv::Point2f{ float(cols)/2.f, float(rows)/2.f };
+    double max_radius = std::sqrt(rows * rows + cols * cols) / 2;
+    cv::Mat mag_polar, phase_polar;
+    cv::linearPolar(mag, mag_polar, center, max_radius, cv::WARP_FILL_OUTLIERS);
+    cv::linearPolar(phase, phase_polar, center, max_radius, cv::WARP_FILL_OUTLIERS);
+    cv::imshow("mag polar", mag_polar);
+    cv::imshow("phase polar", phase_polar);
+    */
 
-    // only need the upper half
-    // shallow copy, for deep copy, use `.copyTo()` or `.clone()`
-    auto roi = cv::Rect(0, 0, m, n/2 + 1);
-    auto h_mag = mag(roi);
+    cv::Mat PSD;
+    //cv::pow(mag, 2, PSD);
+    M_MATH::CalcPSD(I, PSD);
+    cv::imshow("PSD", PSD);
 
-    std::vector<float> Psum(181);
-    // theta: [0:1:180]
-    double theta;
-    cv::Mat mask = cv::Mat::zeros(h_mag.rows, h_mag.cols, CV_32F);
-    auto center = cv::Point(m/2, n/2);
+    cv::waitKey();
 
-    for (auto i = 0; i < 181; i++) {
-        // theta in radians
-        theta = double(i) / 180.0 * M_PI;
-        // draw mask
-        mask.setTo(cv::Scalar(0));
-        cv::line(mask, center,
-             cv::Point2f(float(m)/2 + float(N)/2 * std::cos(theta), float(n)/2-float(N)/2 * std::sin(theta)),
-             cv::Scalar_<float>(1));
-        //cv::imshow("mask", mask);
-        //cv::waitKey();
+    //radial_sum_integral(PSD);
+    //radial_sum_integral_1(PSD);
 
-        // apply mask
-        cv::bitwise_and(h_mag, mask, mask);
-        //cv::imshow("out", mask);
-        //cv::waitKey();
-        //std::cout << cv::sum(mask)[0] << std::endl;
-        Psum[i] = cv::sum(mask)[0];
-    }
 
-    print_v(Psum);
-
-    auto max_it = std::max_element(Psum.begin(), Psum.end());
-    std::cout << std::distance(Psum.begin(), max_it) << std::endl;
+    radial_sum_integral_2(PSD, 20, 250);
+    //radial_sum_integral_2_averaged(PSD, 20, 250);
 
     return 0;
 }
