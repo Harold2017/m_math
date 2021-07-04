@@ -9,6 +9,7 @@
 #include <iostream>
 #include "m_opencv_utils.h"
 #include <fstream>
+#include <numeric>
 
 #define THETA_NUM 720
 
@@ -164,6 +165,39 @@ void radial_sum_integral_2_averaged(cv::Mat const& src, size_t rmin = 20, size_t
 
 int main(int argc, char* argv[])
 {
+    /*
+    std::vector<float> A(49);
+    std::iota(A.begin(), A.end(), 0);
+    auto AA = M_MATH::ToMat(7, 7, A.data());
+    cv::Mat dst, dst1;
+    M_MATH::ForwardFFT(AA, dst);
+    std::cout << "fft with optimal size: \n" << dst << std::endl;
+    M_MATH::ForwardFFT_Not_Optimized_Size(AA, dst1);
+    std::cout << "\nfft without optimal size: \n" << dst1 << std::endl;
+    cv::Mat iAA;
+    M_MATH::InverseFFT(dst, iAA);
+    std::cout << "\nifft of fft with optimal size: \n" << iAA << std::endl;
+    M_MATH::InverseFFT(dst1, iAA);
+    std::cout << "\nifft of fft without optimal size: \n" << iAA << std::endl;
+
+    cv::Mat planes[2], mag, mag1;
+    cv::split(dst, planes);
+    cv::magnitude(planes[0], planes[1], mag);
+    mag = mag(cv::Rect(0, 0, mag.cols & -2, mag.rows & -2));
+    M_MATH::Rearrange(mag, mag);
+    cv::normalize(mag, mag, 0, 1, cv::NORM_MINMAX);
+    std::cout << "\nmagnitude of fft with optimal size: \n" << mag << std::endl;
+    cv::imshow("mag of fft with optimal size", mag);
+    cv::split(dst1, planes);
+    cv::magnitude(planes[0], planes[1], mag1);
+    mag1 = mag1(cv::Rect(0, 0, mag1.cols & -2, mag1.rows & -2));
+    M_MATH::Rearrange(mag1, mag1);
+    cv::normalize(mag1, mag1, 0, 1, cv::NORM_MINMAX);
+    std::cout << "\nmagnitude of fft without optimal size: \n" << mag1 << std::endl;
+    cv::imshow("mag of fft without optimal size", mag1);
+    cv::waitKey();
+    */
+
     cv::Mat I = imread( cv::samples::findFile( argv[1] ), cv::IMREAD_GRAYSCALE);
     if( I.empty()){
         std::cout << "Error opening image" << std::endl;

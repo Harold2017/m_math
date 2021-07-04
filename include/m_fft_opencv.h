@@ -35,9 +35,24 @@ namespace M_MATH {
         cv::dft(complexImg, complexImg);
     }
 
+    // Forward FFT of src (not use optimized size)
+    void ForwardFFT_Not_Optimized_Size(cv::Mat const& Src, cv::Mat& complexImg)
+    {
+        cv::Mat planes[] = {cv::Mat_<float>(Src), cv::Mat::zeros(Src.size(), CV_32F)};
+        cv::merge(planes, 2, complexImg);
+        cv::dft(complexImg, complexImg);
+    }
+
+    void InverseFFT(cv::Mat const& Src, cv::Mat& Dst)
+    {
+        // need scale here only if not scale after use dft
+        cv::idft(Src, Dst, cv::DFT_SCALE | cv::DFT_REAL_OUTPUT);
+    }
+
+    // notice: optimal size padding in FFT will introduce white line in spectrum plot, so not use it
     void Spectrum_Mag(cv::Mat const& src, cv::Mat& Mag) {
         cv::Mat complexImg;
-        ForwardFFT(src, complexImg);
+        ForwardFFT_Not_Optimized_Size(src, complexImg);
 
         cv::Mat planes[2];
         cv::split(complexImg, planes);
@@ -56,7 +71,7 @@ namespace M_MATH {
 
     void Spectrum_MagInLog(cv::Mat const& src, cv::Mat& Mag) {
         cv::Mat complexImg;
-        ForwardFFT(src, complexImg);
+        ForwardFFT_Not_Optimized_Size(src, complexImg);
 
         cv::Mat planes[2];
         cv::split(complexImg, planes);
@@ -77,7 +92,7 @@ namespace M_MATH {
     void Spectrum_Mag_Phase(cv::Mat const& src, cv::Mat& Mag, cv::Mat& Phase)
     {
         cv::Mat complexImg;
-        ForwardFFT(src, complexImg);
+        ForwardFFT_Not_Optimized_Size(src, complexImg);
 
         cv::Mat planes[2];
         cv::split(complexImg, planes);
@@ -102,7 +117,7 @@ namespace M_MATH {
     void Spectrum_MagInLog_Phase(cv::Mat& src, cv::Mat& MagInLog, cv::Mat& Phase)
     {
         cv::Mat complexImg;
-        ForwardFFT(src, complexImg);
+        ForwardFFT_Not_Optimized_Size(src, complexImg);
 
         cv::Mat planes[2];
         cv::split(complexImg, planes);
@@ -125,7 +140,6 @@ namespace M_MATH {
     void CalcPSD(const cv::Mat& src, cv::Mat& PSD, bool logflag = false)
     {
         // not use padding here
-        // FIXME: padding introduce white lines on ouputImg's x, y axis
         cv::Mat planes[2] = { cv::Mat_<float>(src.clone()), cv::Mat::zeros(src.size(), CV_32F) };
         cv::Mat complexI;
         cv::merge(planes, 2, complexI);
