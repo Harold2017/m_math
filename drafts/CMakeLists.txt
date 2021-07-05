@@ -11,7 +11,6 @@ endfunction()
 
 addDraft(d_filter filter.cpp ${OpenCV_LIBS})
 addDraft(d_curvefit curvefit.cpp ${OpenCV_LIBS})
-addDraft(d_curvature curvature.cpp ${OpenCV_LIBS})
 addDraft(d_correlation correlation.cpp ${OpenCV_LIBS})
 addDraft(d_filter1d filter1d.cpp ${OpenCV_LIBS})
 addDraft(d_area area.cpp ${OpenCV_LIBS})
