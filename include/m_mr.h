@@ -18,7 +18,7 @@
 #include "m_interp_hm.h"
 
 // debug
-//#define DEBUG_DRAW
+#define DEBUG_DRAW
 
 #ifdef DEBUG_DRAW
 #include <opencv2/highgui.hpp>
@@ -210,43 +210,32 @@ namespace M_MATH {
         // Sk (y at 0 - y at 1 = b - (k + b) = -k)
         Sk = -k;
 
-        // Spk
+        // Smr1
         auto Smr1_y = b;
-        tmp_pts.clear();
-        for (auto _it = vp.begin(); _it != vp.end(); ++_it)
-            if ((*_it).y - Smr1_y >= 0)
-                tmp_pts.push_back(*_it);
-            else break;
-        cv::fitLine(tmp_pts, line, cv::DIST_L2, 0, 0.01, 0.01);
-        auto Spk_k = line[1] / line[0];
-        auto Spk_b = line[3] - Spk_k * line[2];
-        Spk = Spk_b - b;
-        Smr1 = tmp_pts[tmp_pts.size()-1].x;
+        auto Smr1_it_x = std::find_if(vp.begin(), vp.end(), [=](cv::Point_<T> const& p) { return p.y <= Smr1_y; });
+        Smr1 = (*Smr1_it_x).x;
 
-#ifdef DEBUG_DRAW
-        cv::line(board, cv::Point(BOARD_SIZE * tmp_pts[0].x, BOARD_SIZE - Spk_k * tmp_pts[0].x - Spk_b), cv::Point(BOARD_SIZE * tmp_pts[tmp_pts.size() - 1].x, BOARD_SIZE - Spk_k * tmp_pts[tmp_pts.size() - 1].x - Spk_b), cv::Scalar(255, 0, 0));
-#endif //DEBUG_DRAW
-
-        // Svk
+        // Smr2
         auto Smr2_y = k + b;
         auto Smr2_it_x = std::find_if(vp.begin(), vp.end(), [=](cv::Point_<T> const& p) { return p.y <= Smr2_y; });
-        tmp_pts.clear();
-        for (auto i = Smr2_it_x; i != vp.end(); ++i)
-            tmp_pts.push_back(*i);
-        cv::fitLine(tmp_pts, line, cv::DIST_L2, 0, 0.01, 0.01);
-        auto Svk_k = line[1] / line[0];
-        auto Svk_b = line[3] - Svk_k * line[2];
-        Svk = k + b - (Svk_k + Svk_b);
         Smr2 = (*Smr2_it_x).x;
 
-#ifdef DEBUG_DRAW
-        cv::line(board, cv::Point(BOARD_SIZE * tmp_pts[0].x, BOARD_SIZE - Svk_k * tmp_pts[0].x - Svk_b), cv::Point(BOARD_SIZE * tmp_pts[tmp_pts.size() - 1].x, BOARD_SIZE - Svk_k * tmp_pts[tmp_pts.size() - 1].x - Svk_b), cv::Scalar(255, 0, 0));
-#endif //DEBUG_DRAW
+        // A1 (integrate Mr curve from 0 to Smr1)
+        // A2 (integrate Mr curve from Smr2 to 1)
+        auto f = [&](double x) {
+            return MaterialCurve(x);
+        };
+        A1 = i_QAG.integrate(f, 0., Smr1) - Smr1 * Smr1_y;
+        A2 = (1.0 - Smr2) * Smr2_y - i_QAG.integrate(f, Smr2, 1.);
 
-        A1 = Smr1 * Spk / 2;
-        A2 = (1.0 - Smr2) * Svk / 2;
+        // Spk (equal area triangle)
+        // Svk (equal area triangle)
+        Spk = 2. * A1 / Smr1;
+        Svk = 2. * A2 / (1.0 - Smr2);
 
 #ifdef DEBUG_DRAW
+        cv::line(board, cv::Point(0, BOARD_SIZE - b - Spk), cv::Point(Smr1 * BOARD_SIZE, BOARD_SIZE - b), cv::Scalar(255, 0, 0));
+        cv::line(board, cv::Point(Smr2 * BOARD_SIZE, BOARD_SIZE - k - b), cv::Point(BOARD_SIZE, BOARD_SIZE - k - b + Svk), cv::Scalar(255, 0, 0));
         cv::imshow("board", board);
         cv::waitKey();
 #endif //DEBUG_DRAW

@@ -68,7 +68,7 @@ namespace M_MATH {
         erri1 = std::fabs(i1 - is); erri2 = std::fabs(i2 - is);
         R = (erri2 != 0.) ? erri1/erri2 : 1.;
 
-        tol = (R > 0. and R < 1.) ? tol/R : tol;
+        tol = (R > 0. && R < 1.) ? tol/R : tol;
         is = std::fabs(is)*tol/eps;
         if (is == 0.) is = b-a;
 
@@ -92,9 +92,9 @@ namespace M_MATH {
         i2 = (h/6.)*(fa + fb + 5.*(fml+fmr));
         i1 = (h/1470.)*(77*(fa+fb) + 432.*(fmll + fmrr) + 625.*(fml + fmr) + 672.*fm);
 
-        if (is + (i1-i2) == is or mll <= a or b <= mrr)
+        if (is + (i1-i2) == is || mll <= a || b <= mrr)
         {
-            if ( (m <= a or b <= m) and !terminated)
+            if ( (m <= a || b <= m) && !terminated)
             {
                 std::cerr << "No machine number in the interval. Requested tolerance may not be met.\n";
                 terminated = true;
