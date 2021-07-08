@@ -163,6 +163,24 @@ void radial_sum_integral_2_averaged(cv::Mat const& src, size_t rmin = 20, size_t
     std::cout << "max at angle: " << angle_in_degrees << std::endl;
 }
 
+void polar_plot_integral(cv::Mat const& src) {
+    cv::Mat polar;
+    auto d = src.rows > src.cols ? src.cols : src.rows;
+    cv::linearPolar(src, polar, cv::Point2f(src.cols/2.f, src.rows/2.f), double(d / 2), cv::INTER_LINEAR | cv::WARP_FILL_OUTLIERS);
+    // compute with polar plot
+    double max = 0;
+    float row = 0;
+    for (auto i = 0; i < d; i++)
+        if (cv::sum(polar.row(i))[0] > max) {
+            max = cv::sum(polar.row(i))[0];
+            row = i;
+        }
+    auto angle = 180 - row / float(d) * 360;
+    angle = angle < 0 ? angle + 180 : angle;
+    angle = angle > 180 ? angle - 180 : angle;
+    std::cout << "max at angle: " << angle << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
     /*
@@ -220,7 +238,7 @@ int main(int argc, char* argv[])
     //auto center = cv::Point{ mag.cols/2, mag.rows/2 };
     //std::cout << "max mag with phase: " << phase.at<float>(max_mag_loc) * 180.0 / CV_PI << " at angle: " << std::atan2(max_mag_loc.y - center.y, max_mag_loc.x - center.x) * 180.0 / CV_PI  << std::endl;
 
-    //cv::imshow("Input Image", I);
+    cv::imshow("Input Image", I);
     cv::imshow("spectrum magnitude", mag);
     //cv::imshow("phase", phase);
 
@@ -241,14 +259,20 @@ int main(int argc, char* argv[])
     M_MATH::CalcPSD(I, PSD);
     cv::imshow("PSD", PSD);
 
+    // transfor to polar plot
+    cv::Mat polar;
+    cv::linearPolar(PSD, polar, cv::Point2f(PSD.cols/2.f, PSD.rows/2.f), PSD.rows, cv::INTER_LINEAR | cv::WARP_FILL_OUTLIERS);
+    cv::imshow("polar", polar);
+
     cv::waitKey();
 
     //radial_sum_integral(PSD);
     //radial_sum_integral_1(PSD);
 
 
-    radial_sum_integral_2(PSD, 20, 250);
-    //radial_sum_integral_2_averaged(PSD, 20, 250);
+    //radial_sum_integral_2(PSD, 20, 250);
+    radial_sum_integral_2_averaged(PSD, 20, 250);
+    polar_plot_integral(PSD);
 
     return 0;
 }
