@@ -71,6 +71,7 @@ addExample(m_watershed watershed.cpp ${OpenCV_LIBS})
 addExample(m_curvature_opencv curvature_opencv.cpp ${OpenCV_LIBS})
 addExample(m_connected_components connected_components.cpp ${OpenCV_LIBS})
 addExample(m_imregion_min imregion_min.cpp ${OpenCV_LIBS})
+addExample(m_circle_ellipse_to_line circle_ellipse_to_line.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (NOT USE_OPEN3D AND APPLE)
