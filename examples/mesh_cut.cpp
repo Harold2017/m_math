@@ -41,7 +41,7 @@ double PolygonArea(std::vector<Eigen::Vector2d> const& polygon_pts, bool isClose
     double res = 0;
     auto p1 = polygon_pts[0];
     for (auto const& pt : polygon_pts) {
-        res += pt(0) * p1(1) - pt(1) * p1(0);
+        res += p1(0) * pt(1) - p1(1) * pt(0);
         p1 = pt;
     }
     if (!isClosed)
