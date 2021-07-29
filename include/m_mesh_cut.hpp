@@ -116,6 +116,15 @@ namespace M_MATH {
      * @param l_mesh
      * @param r_mesh
      * @return successfully cut or not
+     * sample usage:
+     * bool ret = M_MATH::MeshCut(*mesh, plane_center, plane_normal, *upper_mesh, *lower_mesh);
+     * if (!ret)  // cutting plane not intersect with mesh bounding box
+     * {
+            if (plane_center.z() < mesh->GetAxisAlignedBoundingBox().GetCenter().z())
+                upper_mesh = mesh;
+            else
+                lower_mesh = mesh;
+     *  }
     */
     bool MeshCut(open3d::geometry::TriangleMesh const& mesh,
                  Eigen::Vector3d const& plane_center,
