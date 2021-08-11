@@ -54,7 +54,7 @@ namespace M_FILESYSTEM {
         // no dot or find floder slash after dot
         if ((dot_pos >= filename.size()) || (filename.find_first_of("/\\", dot_pos) != std::string::npos)) return "";
         std::string ext = filename.substr(dot_pos + 1);
-        std::transform(ext.begin(), ext.end(), ext.begin(), std::tolower);
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return std::tolower(c); });
         return ext;
     }
 
