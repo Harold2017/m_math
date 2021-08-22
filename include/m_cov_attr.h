@@ -11,18 +11,18 @@
 
 namespace M_MATH {
     // points set consist of its k nearest neighbors
-    // eigenvalues: ¦Ë0 > ¦Ë1 > ¦Ë2 >= 0
+    // eigenvalues: l0 > l1 > l2 >= 0
     // eigenvectors: e0, e1, e2
     struct CovarianceAttributes {
         double lambda0, lambda1, lambda2;
-        double omni_var,     // (¦Ë0 * ¦Ë1 * ¦Ë2) ^ (1/3)
-               surface_var,  // ¦Ë2 / (¦Ë0 + ¦Ë1 + ¦Ë2)
-               anisotropy,   // (¦Ë0 - ¦Ë2) / ¦Ë0
+        double omni_var,     // (l0 * l1 * l2) ^ (1/3)
+               surface_var,  // l2 / (l0 + l1 + l2)
+               anisotropy,   // (l0 - l2) / l0
                // https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2767549 
-               entropy,      // effective dimensionality = exp(Shannon entropy), Shannon entropy = -sum(¦Ëi * ln(¦Ëi))
-               linearity,    // (¦Ë0 - ¦Ë1) / ¦Ë0 ¡Ö 1   =>   ¦Ë0 >> ¦Ë1 ¡Ö ¦Ë2
-               planarity,    // (¦Ë1 - ¦Ë2) / ¦Ë0 ¡Ö 1   =>   ¦Ë0 ¡Ö ¦Ë1 >> ¦Ë2
-               sphericity;   // ¦Ë2        / ¦Ë0 ¡Ö 1   =>   ¦Ë0 ¡Ö ¦Ë1 ¡Ö ¦Ë2, scatter
+               entropy,      // effective dimensionality = exp(Shannon entropy), Shannon entropy = -sum(li * ln(li))
+               linearity,    // (l0 - l1) / l0 â‰ˆ 1   =>   l0 >> l1 â‰ˆ l2
+               planarity,    // (l1 - l2) / l0 â‰ˆ 1   =>   l0 â‰ˆ l1 >> l2
+               sphericity;   // l2        / l0 â‰ˆ 1   =>   l0 â‰ˆ l1 â‰ˆ l2, scatter
 
         CovarianceAttributes() = default;
         void Compute(std::vector<Eigen::Vector3d> const& pts, size_t pt_idx, int knn);
@@ -42,17 +42,40 @@ namespace M_MATH {
         points.push_back(pts[pt_idx]);
         std::transform(indices.begin(), indices.end(), std::back_inserter(points), [&](int i) { return pts[i]; });
 
-        // pca
-        Eigen::MatrixX3d pts_matrix = Eigen::MatrixX3d::Map(pts[0].data(), 3, knn + 1).transpose();
-        Eigen::Vector3d mean = pts_matrix.colwise().mean();
-        Eigen::MatrixX3d centered = pts_matrix.rowwise() - mean.transpose();
-        Eigen::Matrix3d covariance_matrix = (centered.adjoint() * centered) / (knn);
+        // construct cov matrix
+        Eigen::Vector3d avg{ 0., 0., 0. };
+        for (auto i = 0; i < knn; i++) {
+			avg += points[i];
+		}
+		avg = avg / knn;
+        Eigen::Vector3d tmp{ 0., 0., 0. };
+        double tmp_xy, tmp_xz, tmp_yz;
+        Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
+        for (auto i = 0; i < knn; i++) {
+			tmp = points[i] - avg;
+			tmp_xy = tmp.x() * tmp.y();
+			tmp_xz = tmp.x() * tmp.z();
+			tmp_yz = tmp.y() * tmp.z();
+
+			cov(0, 0) += tmp.x() * tmp.x();
+			cov(0, 1) += tmp_xy;
+			cov(0, 2) += tmp_xz;
+
+			cov(1, 0) += tmp_xy;
+			cov(1, 1) += tmp.y() * tmp.y();
+			cov(1, 2) += tmp_yz;
+
+			cov(2, 0) += tmp_xz;
+			cov(2, 1) += tmp_yz;
+			cov(2, 2) += tmp.z() * tmp.z();
+		}
+		cov /= knn;
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
-        solver.compute(covariance_matrix);
+        solver.compute(cov);
         Eigen::Vector3d lambda = solver.eigenvalues();
-        lambda0 = abs(lambda(2));
-        lambda1 = abs(lambda(1));
-        lambda2 = abs(lambda(0));
+        lambda0 = lambda(2); //abs(lambda(2));
+        lambda1 = lambda(1); //abs(lambda(1));
+        lambda2 = lambda(0); //abs(lambda(0));
 
         omni_var = pow(lambda0 * lambda1 * lambda2, 1.0 / 3.0);
         surface_var = lambda2 / (lambda0 + lambda1 + lambda2);
