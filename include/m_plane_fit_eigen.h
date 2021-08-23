@@ -20,7 +20,7 @@ namespace M_MATH {
     template<typename T>
     std::pair<Eigen::Matrix<T, 3, 1>, Eigen::Matrix<T, 3, 1>> PlaneFit(std::vector<Eigen::Matrix<T, 3, 1>> const& pts) {
         auto rows = pts.size();
-        Eigen::Matrix<T, Eigen::Dynamic, 3> pts_matrix = Eigen::Matrix<T, Eigen::Dynamic, 3>::Map(pts[0].data(), 3, rows).transpose();  // transpose due to Eigen::Vector3T is <T, 3, 1>
+        Eigen::Matrix<T, Eigen::Dynamic, 3> pts_matrix = Eigen::Matrix<T, 3, Eigen::Dynamic>::Map(pts[0].data(), 3, rows).transpose();  // transpose due to Eigen::Vector3T is <T, 3, 1>
 
         // construct covariance matrix for plane PCA
         Eigen::Matrix<T, 1, 3> mean = pts_matrix.colwise().mean();
@@ -46,7 +46,7 @@ namespace M_MATH {
     template<typename T>
     std::pair<Eigen::Matrix<T, 3, 1>, Eigen::Matrix<T, 3, 1>> PlaneFitSVD(std::vector<Eigen::Matrix<T, 3, 1>> const& pts) {
         auto rows = pts.size();
-        Eigen::Matrix<T, 3, Eigen::Dynamic> pts_matrix = Eigen::Matrix<T, Eigen::Dynamic, 3>::Map(pts[0].data(), 3, rows);
+        Eigen::Matrix<T, 3, Eigen::Dynamic> pts_matrix = Eigen::Matrix<T, 3, Eigen::Dynamic>::Map(pts[0].data(), 3, rows);
 
         // construct covariance matrix for plane PCA
         Eigen::Matrix<T, 3, 1> mean = pts_matrix.rowwise().mean();

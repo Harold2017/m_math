@@ -54,33 +54,10 @@ int main(int argc, char* argv[]) {
         std::transform(indices.cbegin(), indices.cend(), std::back_inserter(points), [&](int i) { return p_source->points_[i]; });
 
         // construct cov matrix
-        Eigen::Vector3d avg{ 0., 0., 0. };
-        for (auto i = 0; i < knn; i++) {
-			avg += points[i];
-		}
-		avg = avg / knn;
-        Eigen::Vector3d tmp{ 0., 0., 0. };
-        double tmp_xy, tmp_xz, tmp_yz;
-        Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
-        for (auto i = 0; i < knn; i++) {
-			tmp = points[i] - avg;
-			tmp_xy = tmp.x() * tmp.y();
-			tmp_xz = tmp.x() * tmp.z();
-			tmp_yz = tmp.y() * tmp.z();
-
-			cov(0, 0) += tmp.x() * tmp.x();
-			cov(0, 1) += tmp_xy;
-			cov(0, 2) += tmp_xz;
-
-			cov(1, 0) += tmp_xy;
-			cov(1, 1) += tmp.y() * tmp.y();
-			cov(1, 2) += tmp_yz;
-
-			cov(2, 0) += tmp_xz;
-			cov(2, 1) += tmp_yz;
-			cov(2, 2) += tmp.z() * tmp.z();
-		}
-		cov /= knn;
+        auto rows = points.size();
+        Eigen::MatrixX3d pts_matrix = Eigen::Matrix3Xd::Map(points[0].data(), 3, rows).transpose();
+        auto centered = pts_matrix.rowwise() - pts_matrix.colwise().mean();
+        auto cov = (centered.adjoint() * centered) / (rows - 1);
         // compute eigen values
         Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
         solver.compute(cov);
