@@ -7,10 +7,28 @@ void DrawRegistrationResult(std::shared_ptr<open3d::geometry::PointCloud> source
                             std::shared_ptr<open3d::geometry::PointCloud> target, 
                             Eigen::Matrix4d const& transformation) {
     if (!source->HasColors())
-        source->colors_ = std::vector<Eigen::Vector3d>(source->points_.size(), Eigen::Vector3d(1, 0, 0));
+        source->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
     if (!target->HasColors())
-        target->colors_ = std::vector<Eigen::Vector3d>(source->points_.size(), Eigen::Vector3d(0, 1, 0));
+        target->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
+    // make copy
+    source = std::make_shared<open3d::geometry::PointCloud>(*source);
     source->Transform(transformation);
+    open3d::visualization::DrawGeometries({ source, target }, "registration result");
+}
+
+void DrawRegistrationResult(std::shared_ptr<open3d::geometry::PointCloud> source, 
+                            std::shared_ptr<open3d::geometry::PointCloud> target, 
+                            Eigen::Matrix3d const& rot,
+                            Eigen::Vector3d const& center,
+                            Eigen::Vector3d const& trans) {
+    if (!source->HasColors())
+        source->PaintUniformColor(Eigen::Vector3d(1, 0, 0));
+    if (!target->HasColors())
+        target->PaintUniformColor(Eigen::Vector3d(0, 1, 0));
+    // make copy
+    source = std::make_shared<open3d::geometry::PointCloud>(*source);
+    source->Rotate(rot, center);
+    source->Translate(trans);
     open3d::visualization::DrawGeometries({ source, target }, "registration result");
 }
 
@@ -50,6 +68,43 @@ void DrawCorrespondence(std::shared_ptr<open3d::geometry::PointCloud> source,
     open3d::visualization::DrawGeometries({ lineset }, "correspondence line set");
 }
 
+// quaternion
+Eigen::Matrix3d FindRotationMatrix(Eigen::Vector3d const &in_normal, Eigen::Vector3d const &out_normal) {
+    Eigen::Vector3d u = in_normal.cross(out_normal).normalized();
+    double theta_half = acos(in_normal.dot(out_normal)) / 2.0;
+    // rotation quaternion (a, bi, cj, dk)
+    double a = cos(theta_half);
+    double b = sin(theta_half) * u.x();
+    double c = sin(theta_half) * u.y();
+    double d = sin(theta_half) * u.z();
+
+    Eigen::Matrix3d rot_mat;
+    rot_mat(0, 0) = (1 - 2 * c * c - 2 * d * d);
+    rot_mat(0, 1) = (2 * b * c - 2 * a * d);
+    rot_mat(0, 2) = (2 * a * c + 2 * b * d);
+    rot_mat(1, 0) = (2 * b * c + 2 * a * d);
+    rot_mat(1, 1) = (1 - 2 * b * b - 2 * d * d);
+    rot_mat(1, 2) = (2 * c * d - 2 * a * b);
+    rot_mat(2, 0) = (2 * b * d - 2 * a * c);
+    rot_mat(2, 1) = (2 * a * b + 2 * c * d);
+    rot_mat(2, 2) = (1 - 2 * b * b - 2 * c * c);
+    return rot_mat;
+}
+
+// R_target2source * R_source2origin = R_target2origin   ===>   R_target2source = R_target2origin * R_source2origin.T()
+Eigen::Matrix3d FindRotationMatrix(Eigen::Matrix3d const& rot_max_s2o, Eigen::Matrix3d const& rot_max_t2o) {
+    return rot_max_t2o * rot_max_s2o.transpose();
+}
+
+// https://stackoverflow.com/questions/25504397/eigen-combine-rotation-and-translation-into-one-matrix
+Eigen::Matrix4d CreateQuaternion(Eigen::Matrix3d const& rot_mat, Eigen::Vector3d const& trans_vec) {
+    Eigen::Matrix4d Quaternion;
+    Quaternion.setIdentity();
+    Quaternion.block<3, 3>(0, 0) = rot_mat;
+    Quaternion.block<3, 1>(0, 3) = trans_vec;
+    return Quaternion;
+}
+
 int main(int argc, char* argv[]) {
     assert(argc == 3);
 
@@ -71,6 +126,18 @@ int main(int argc, char* argv[]) {
     // draw filtered PCDs
     open3d::visualization::DrawGeometries({ p_source, p_target }, "filtered PCDs");
 
+    // get rough transformation matrix from bounding box
+    auto p_source_bbox = std::make_shared<open3d::geometry::OrientedBoundingBox>(p_source->GetOrientedBoundingBox());
+    auto p_target_bbox = std::make_shared<open3d::geometry::OrientedBoundingBox>(p_target->GetOrientedBoundingBox());
+    open3d::visualization::DrawGeometries({ p_source_bbox, p_target_bbox }, "bbox");
+    auto rot_mat = FindRotationMatrix(p_source_bbox->R_, p_target_bbox->R_);  // rot_mat * source_bbox.R_ = target_bbox.R_
+    auto trans_vec = p_target_bbox->center_ - p_source_bbox->center_;
+    //DrawRegistrationResult(p_source, p_target, rot_mat, p_source_bbox->center_, trans_vec);  // rotate relative to bbox's center
+    auto g_transformation = CreateQuaternion(rot_mat, trans_vec);
+    std::cout << "-Rough registration based on OrientedBoundingBox\ntransformation matrix:\n" << g_transformation << std::endl;
+    DrawRegistrationResult(p_source, p_target, g_transformation);
+
+    /*
     // preprocess
     auto source_pcd_fpfh_pair = PreProcessPCD(p_source, voxel_size);
     auto target_pcd_fpfh_pair = PreProcessPCD(p_target, voxel_size);
@@ -97,6 +164,10 @@ int main(int argc, char* argv[]) {
     DrawRegistrationResult(p_source, p_target, g_transformation);
     // draw correspondence
     if (!g_reg_result.correspondence_set_.empty()) DrawCorrespondence(p_source, p_target, g_reg_result.correspondence_set_);
+    */
+
+   // FIXME: use transformation matrix from OrientedBoundingBox make the registration result worse...
+   g_transformation = Eigen::Matrix4d::Identity();
 
     // fine registration ICP
     double threshold = voxel_size * 0.5;
