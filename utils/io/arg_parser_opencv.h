@@ -11,6 +11,9 @@
 namespace M_ARG_PARSER {
     cv::Vec3d ParseAsOpenCVVec3d(int argc, char** argv, std::string const& option, cv::Vec3d const& default_value /* = cv::Vec3d(0, 0, 0)*/) {
         std::string str = ParseAsString(argc, argv, option, "");
+        str.erase(std::remove_if(str.begin(), str.end(), [](unsigned char x)
+            { return std::isspace(x); }),
+            str.end());
         if (str.empty() || (!(str.front() == '(' && str.back() == ')') &&
                             !(str.front() == '[' && str.back() == ']') &&
                             !(str.front() == '{' && str.back() == '}') &&
@@ -35,6 +38,43 @@ namespace M_ARG_PARSER {
                 return default_value;
             vec(i) = d;
         }
+        return vec;
+    }
+
+    template<typename T>
+    cv::Point_<T> ParseAsOpenCVPoint(int argc, char** argv, std::string const& option, cv::Point_<T> const& default_value /* = cv::Vec3d(0, 0, 0)*/)
+    {
+        std::string str = ParseAsString(argc, argv, option, "");
+        str.erase(std::remove_if(str.begin(), str.end(), [](unsigned char x)
+            { return std::isspace(x); }),
+            str.end());
+        if (str.empty() || (!(str.front() == '(' && str.back() == ')') &&
+            !(str.front() == '[' && str.back() == ']') &&
+            !(str.front() == '{' && str.back() == '}') &&
+            !(str.front() == '<' && str.back() == '>')))
+            return default_value;
+        std::string parsed_str = str.substr(1, str.length() - 2);
+        std::vector<std::string> tokens;
+        std::string::size_type pos = 0, new_pos = 0, last_pos = 0;
+        while (pos != std::string::npos)
+        {
+            pos = parsed_str.find_first_of(",", last_pos);
+            new_pos = (pos == std::string::npos ? parsed_str.length() : pos);
+            if (new_pos != last_pos)
+                tokens.push_back(parsed_str.substr(last_pos, new_pos - last_pos));
+            last_pos = new_pos + 1;
+        }
+        cv::Point_<T> vec;
+        char* end;
+        errno = 0;
+        double d = std::strtod(tokens[0].c_str(), &end);
+        if (errno == ERANGE || *end != '\0')
+            return cv::Point_<T>();
+        vec.x = d;
+        d = std::strtod(tokens[1].c_str(), &end);
+        if (errno == ERANGE || *end != '\0')
+            return cv::Point_<T>();
+        vec.y = d;
         return vec;
     }
 }
