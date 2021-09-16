@@ -69,7 +69,7 @@ namespace M_MATH {
         auto circle = GetCircle(pt1, pt2, pt3);
         auto starting_angle = static_cast<T>(cv::fastAtan2(pt1.y - circle.center.y, pt1.x - circle.center.x) * CV_2PI / 360.);
         auto arc_angle = GetAngle(pt1, circle.center, pt3);
-        if (GetAngle(pt1, pt2, pt3) > static_cast<T>(CV_PI / 2.))  // angle<pt1, pt2, pt3> > 90 degrees means the arc angle > 180 degrees
+        if (GetAngle(pt1, pt2, pt3) < static_cast<T>(CV_PI / 2.))  // angle<pt1, pt2, pt3> < 90 degrees means the arc angle > 180 degrees
             arc_angle = CV_2PI - arc_angle;
         return Arc<T>{ circle.center,
                        starting_angle,
