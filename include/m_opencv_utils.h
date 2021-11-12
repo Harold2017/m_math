@@ -6,6 +6,7 @@
 #define M_MATH_M_OPENCV_UTILS_H
 
 #include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
 #include <vector>
 
 namespace M_MATH {
@@ -103,6 +104,21 @@ namespace M_MATH {
         }
 
         return false;
+    }
+
+    template <typename T>
+    cv::Mat PlotLineSeries(std::vector<T>& vals, int YRange[2])
+    {
+        auto it = std::minmax_element(vals.begin(), vals.end());
+        float scale = 1. / std::ceil(*it.second - *it.first);
+        float bias = *it.first;
+        int rows = YRange[1] - YRange[0] + 1;
+        cv::Mat image = cv::Mat::zeros(rows, vals.size(), CV_8UC3);
+        image.setTo(0);
+        for (int i = 0; i < (int)vals.size() - 1; i++)
+            cv::line(image, cv::Point(i, rows - 1 - (vals[i] - bias) * scale * YRange[1]), cv::Point(i + 1, rows - 1 - (vals[i + 1] - bias) * scale * YRange[1]), cv::Scalar(255, 0, 0), 1);
+
+        return image;
     }
 }
 
