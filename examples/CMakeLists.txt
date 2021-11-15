@@ -74,6 +74,7 @@ addExample(m_imregion_min imregion_min.cpp ${OpenCV_LIBS})
 addExample(m_circle_ellipse_to_line circle_ellipse_to_line.cpp ${OpenCV_LIBS})
 addExample(m_pcd_filter pcd_filter.cpp ${Open3D_LIBRARIES})
 addExample(m_arc arc.cpp ${OpenCV_LIBS})
+addExample(m_texture_mapping texture_mapping.cpp ${Open3D_LIBRARIES} ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (NOT USE_OPEN3D AND APPLE)
