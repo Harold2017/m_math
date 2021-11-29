@@ -24,3 +24,4 @@ addDraft(d_line_dection_3d line_dection_3d.cpp ${Open3D_LIBRARIES} ${OpenCV_LIBS
 addDraft(d_pcd_split pcd_split.cpp ${Open3D_LIBRARIES})
 addDraft(d_cs_line cs_line.cpp ${Open3D_LIBRARIES} ${OpenCV_LIBS})
 addDraft(d_eigen_transform eigen_transform.cpp ${Open3D_LIBRARIES})
+addDraft(d_mesh_smooth mesh_smooth.cpp ${Open3D_LIBRARIES})
