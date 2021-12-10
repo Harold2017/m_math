@@ -78,6 +78,7 @@ addExample(m_texture_mapping texture_mapping.cpp ${Open3D_LIBRARIES} ${OpenCV_LI
 addExample(m_rigid_transform rigid_transform.cpp ${Open3D_LIBRARIES})
 addExample(m_eigen_io eigen_io.cpp ${Open3D_LIBRARIES})
 addExample(m_cv_io cv_io.cpp ${OpenCV_LIBS})
+addExample(m_p2d p2d.cpp ${OpenCV_LIBS})
 
 # handle eigen installed by brew on APPLE
 if (NOT USE_OPEN3D AND APPLE)
