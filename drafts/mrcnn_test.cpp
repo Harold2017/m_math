@@ -13,6 +13,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 
+#include <unordered_map>
+
 // Initialize the parameters
 float confThreshold = 0.5; // Confidence threshold
 float maskThreshold = 0.3; // Mask threshold
@@ -104,15 +106,14 @@ void postprocess(cv::Mat& frame, const std::vector<cv::Mat>& outs)
 
 struct Mask
 {
-    int class_id;
     cv::Scalar color;
-    cv::Mat mask;
+    cv::Rect bounding_box;  // <topleft.x, topleft.y, width, height>
 };
 
 struct MaskedImg
 {
     cv::Mat img;
-    std::vector<Mask> masks;
+    std::unordered_map<int, std::vector<Mask>> masks;
 };
 
 // Draw the mask on the image
@@ -124,7 +125,7 @@ void drawMask(MaskedImg& mi, int classId, cv::Rect const& box, cv::Mat& objectMa
     cv::Mat mask = (objectMask > maskThreshold);
     cv::Mat coloredRoi = (color + 0 * mi.img(box));
     coloredRoi.copyTo(mi.img(box), mask);
-    mi.masks.push_back(Mask{ classId, color, mask });
+    mi.masks[classId].push_back(Mask{ color, box });
 }
 
 // get masked img
@@ -294,9 +295,14 @@ int main(int argc, char* argv[])
     cv::String meta = output.substr(0, output.find_last_of('.'))+".yaml";
     cv::FileStorage fs(meta, cv::FileStorage::WRITE);
     fs << "masked image file" << output;
-    fs << "masks number" << int(mi.masks.size());
-    for (auto i = 0; i < mi.masks.size(); i++)
-        fs << "mask " + std::to_string(i) << "{" << "class id" << mi.masks[i].class_id << "color" << mi.masks[i].color << "mat" << mi.masks[i].mask << "}";
+    fs << "masks classes" << int(mi.masks.size());
+    for (auto const& kv : mi.masks)
+    {
+        fs << "class id " + std::to_string(kv.first) << "{";
+        for (auto const& m : kv.second)
+            fs << "color" << m.color << "bounding_box" << m.bounding_box;
+        fs << "}";
+    }
     fs.release();
 
     return 0;
