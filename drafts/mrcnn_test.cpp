@@ -223,8 +223,9 @@ int main(int argc, char* argv[])
 
     // Load the network
     cv::dnn::Net net = cv::dnn::readNetFromTensorflow(modelWeights, textGraph);
-    net.setPreferableBackend(cv::dnn::Backend::DNN_BACKEND_OPENCV);
-    net.setPreferableTarget(cv::dnn::Target::DNN_TARGET_CPU);
+    // follow my gist to build OpenCV with cuDNN: https://gist.github.com/Harold2017/e1c2d50146d02fb461a7e016adb20907
+    net.setPreferableBackend(cv::dnn::Backend::DNN_BACKEND_CUDA);
+    net.setPreferableTarget(cv::dnn::Target::DNN_TARGET_CUDA);
 
     cv::String input = parser.get<cv::String>("input");
     cv::String output = parser.get<cv::String>("output");
