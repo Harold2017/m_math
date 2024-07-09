@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.17)
+
+if(WIN32)
+    set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE INTERNAL "" FORCE)
+endif()
+
 project(m_math)
 
 # Set build type to DEBUG by default:
@@ -15,7 +20,7 @@ option(M_MATH_BENCH     "Build benchmarks" OFF)
 option(M_MATH_STATIC    "Builds a static library instead of a shared one" OFF)
 option(M_MATH_SANITIZE  "Adds sanitive flags" OFF)
 
-option(USE_OPEN3D      "USE_OPEN3D" ON)
+option(USE_OPEN3D      "USE_OPEN3D" OFF)
 option(USE_TBBMALLOC   "USE_TBBMalloc" OFF)
 
 if (M_MATH_STATIC)
